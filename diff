@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Juego del Tute</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <h1>Bienvenido a Tute Online</h1>
+
+    <p>Esta es la base de mi juego del Tute.</p>
+
+    <button onclick="saludar()">Probar botón</button>
+
+    <script src="script.js"></script>
+</body>
+</html>
