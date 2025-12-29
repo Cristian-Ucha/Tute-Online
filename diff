@@ -2,16 +2,17 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Juego del Tute</title>
+    <title>Tute Online</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <h1>Bienvenido a Tute Online</h1>
+    <h1>Tute en línea</h1>
+    <p>Página para jugar al Tute</p>
 
-    <p>Esta es la base de mi juego del Tute.</p>
+    <button onclick="repartir()">Repartir cartas</button>
 
-    <button onclick="saludar()">Probar botón</button>
+    <div id="mesa"></div>
 
     <script src="script.js"></script>
 </body>
