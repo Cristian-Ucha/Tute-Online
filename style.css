@@ -7,8 +7,17 @@ body {
 
 #mesa {
     margin-top: 20px;
-    min-height: 350px;
     display: flex;
     justify-content: center;
-    align-items: center;
+}
+
+.carta {
+    width: 208px;
+    height: 319px;
+
+    background-image: url("cartas/baraja.png");
+    background-repeat: no-repeat;
+    background-position: 0px 0px;
+
+    border: 2px solid red;
 }
