@@ -1,5 +1,19 @@
+body {
+    background-color: #0b5c3b;
+    color: white;
+    font-family: Arial, sans-serif;
+    text-align: center;
+}
+
 #mesa {
     margin-top: 20px;
     display: flex;
     justify-content: center;
+    gap: 10px;
+}
+
+.carta {
+    width: 208px;
+    height: 319px;
+    background-repeat: no-repeat;
 }
