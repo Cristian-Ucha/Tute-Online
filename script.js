@@ -55,7 +55,7 @@ function repartir() {
     const baraja = crearBaraja();
     baraja.sort(() => Math.random() - 0.5);
 
-    const mano = baraja.slice(0, 5);
+    const mano = baraja.slice(0, 10);
 
     mano.forEach(carta => {
         const div = document.createElement("div");
