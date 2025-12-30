@@ -1,3 +1,4 @@
 function repartir() {
-    document.body.innerHTML += "<h1>FUNCIONA</h1>";
+    const mesa = document.getElementById("mesa");
+    mesa.innerHTML = "<h2>ESTOY EN LA MESA</h2>";
 }
