@@ -22,9 +22,5 @@ button {
     height: 319px;
     background-image: url("cartas/baraja.png");
     background-repeat: no-repeat;
-    border-radius: 8px;
 }
-.carta {
-    outline: 3px solid red;
-    background-color: yellow;
-}
+
