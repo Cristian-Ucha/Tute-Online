@@ -1,11 +1,13 @@
+const ANCHO_CARTA = 208;
+const ALTO_CARTA = 319;
+
 function repartir() {
     const mesa = document.getElementById("mesa");
     mesa.innerHTML = "";
 
-    const div = document.createElement("div");
-    div.style.width = "208px";
-    div.style.height = "319px";
-    div.style.backgroundColor = "blue";
+    const carta = document.createElement("div");
+    carta.className = "carta";
+    carta.style.backgroundPosition = "0px 0px";
 
-    mesa.appendChild(div);
+    mesa.appendChild(carta);
 }
