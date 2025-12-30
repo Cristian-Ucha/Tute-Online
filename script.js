@@ -10,7 +10,6 @@ const ALTO_CARTA = 319;
 // DEFINICIÓN DEL JUEGO (TUTE)
 // ==============================
 
-// Palos del Tute con su fila real en el sprite
 const PALOS = [
     { nombre: "oros", fila: 0 },
     { nombre: "copas", fila: 1 },
@@ -18,7 +17,6 @@ const PALOS = [
     { nombre: "bastos", fila: 3 }
 ];
 
-// Valores reales del Tute (sin 8 ni 9) con su columna en el sprite
 const VALORES = [
     { nombre: "as", columna: 0 },
     { nombre: "dos", columna: 1 },
@@ -27,7 +25,6 @@ const VALORES = [
     { nombre: "cinco", columna: 4 },
     { nombre: "seis", columna: 5 },
     { nombre: "siete", columna: 6 },
-    // columnas 7 y 8 (ocho y nueve) se ignoran
     { nombre: "sota", columna: 9 },
     { nombre: "caballo", columna: 10 },
     { nombre: "rey", columna: 11 }
@@ -52,7 +49,7 @@ function crearBaraja() {
         });
     });
 
-    return baraja; // 40 cartas
+    return baraja;
 }
 
 
@@ -98,13 +95,9 @@ function repartir() {
     mesa.style.alignItems = "flex-end";
     mesa.style.padding = "20px";
 
-    // Crear y barajar la baraja
     const baraja = crearBaraja().sort(() => Math.random() - 0.5);
-
-    // Mano real del Tute (10 cartas)
     const mano = baraja.slice(0, 10);
 
-    // Mostrar cartas
     mano.forEach((carta, index) => {
         const div = document.createElement("div");
 
@@ -118,13 +111,24 @@ function repartir() {
 
         div.style.backgroundPosition = `-${x}px -${y}px`;
 
-        // Solapamiento horizontal (clave para que quepan)
+        // Solapamiento
         div.style.marginLeft = index === 0 ? "0px" : "-120px";
+
+        // Transición suave (clave para UX)
+        div.style.transition = "transform 0.15s ease";
+
+        // ===== EFECTO HOVER =====
+        div.addEventListener("mouseenter", () => {
+            div.style.transform = "translateY(-40px)";
+        });
+
+        div.addEventListener("mouseleave", () => {
+            div.style.transform = "translateY(0)";
+        });
 
         mesa.appendChild(div);
     });
 
-    // Mostrar puntuación total
     mostrarPuntuacion(mano);
 }
 
@@ -150,5 +154,5 @@ function mostrarPuntuacion(mano) {
         document.body.appendChild(info);
     }
 
-    info.textContent = "Puntos de la mano: " + puntosMano(mano);
-}
+    info.te
+
