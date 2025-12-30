@@ -19,9 +19,9 @@ button {
 }
 
 .carta {
-    background-color: white;
-    color: black;
-    padding: 10px;
+    width: 208px;
+    height: 319px;
+    background-image: url("cartas/baraja.png");
+    background-repeat: no-repeat;
     border-radius: 8px;
-    width: 100px;
 }
