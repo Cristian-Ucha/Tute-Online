@@ -1,9 +1,9 @@
 // ==============================
-// CONFIGURACIÓN DEL SPRITE
+// CONFIGURACIÓN REAL DEL SPRITE
 // ==============================
 
-const ANCHO_CARTA = 140;
-const ALTO_CARTA = 215;
+const ANCHO_CARTA = 208;
+const ALTO_CARTA = 319;
 
 
 // ==============================
@@ -32,7 +32,7 @@ const VALORES = [
 
 
 // ==============================
-// CREACIÓN DE LA BARAJA
+// BARAJA
 // ==============================
 
 function crearBaraja() {
@@ -54,7 +54,7 @@ function crearBaraja() {
 
 
 // ==============================
-// PUNTUACIÓN DEL TUTE
+// PUNTUACIÓN
 // ==============================
 
 function puntosCarta(valor) {
@@ -69,31 +69,28 @@ function puntosCarta(valor) {
 }
 
 function puntosMano(mano) {
-    let total = 0;
-    mano.forEach(carta => total += puntosCarta(carta.valor));
-    return total;
+    return mano.reduce((total, carta) => total + puntosCarta(carta.valor), 0);
 }
 
 
 // ==============================
-// REPARTO DE CARTAS (10)
+// REPARTO REAL (10 CARTAS)
 // ==============================
 
 function repartir() {
     const mesa = document.getElementById("mesa");
     mesa.innerHTML = "";
 
-    // layout estable
+    // Layout tipo juego real (solapado)
     mesa.style.display = "flex";
-    mesa.style.gap = "6px";
     mesa.style.justifyContent = "center";
+    mesa.style.alignItems = "flex-end";
+    mesa.style.padding = "20px";
 
-    const baraja = crearBaraja();
-    baraja.sort(() => Math.random() - 0.5);
-
+    const baraja = crearBaraja().sort(() => Math.random() - 0.5);
     const mano = baraja.slice(0, 10);
 
-    mano.forEach(carta => {
+    mano.forEach((carta, index) => {
         const div = document.createElement("div");
 
         div.style.width = ANCHO_CARTA + "px";
@@ -101,16 +98,17 @@ function repartir() {
         div.style.backgroundImage = "url('cartas/baraja.png')";
         div.style.backgroundRepeat = "no-repeat";
 
-        const x = carta.columna * 208; // ojo: usamos tamaño REAL del sprite
-        const y = carta.fila * 319;
+        const x = carta.columna * ANCHO_CARTA;
+        const y = carta.fila * ALTO_CARTA;
 
         div.style.backgroundPosition = `-${x}px -${y}px`;
-        div.style.backgroundSize = "2496px 1595px"; // fuerza escalado correcto
+
+        // SOLAPAMIENTO (CLAVE)
+        div.style.marginLeft = index === 0 ? "0px" : "-120px";
 
         mesa.appendChild(div);
     });
 
-    // MOSTRAR PUNTUACIÓN DEBAJO
     mostrarPuntuacion(mano);
 }
 
@@ -125,8 +123,8 @@ function mostrarPuntuacion(mano) {
     if (!info) {
         info = document.createElement("div");
         info.id = "puntuacion";
-        info.style.marginTop = "12px";
-        info.style.fontSize = "18px";
+        info.style.marginTop = "10px";
+        info.style.fontSize = "20px";
         info.style.color = "white";
         info.style.textAlign = "center";
         document.body.appendChild(info);
