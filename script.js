@@ -1,7 +1,16 @@
+// ==============================
+// CONFIGURACIÓN DEL SPRITE
+// ==============================
+
 const ANCHO_CARTA = 208;
 const ALTO_CARTA = 319;
 
-// Palos del Tute con su FILA REAL en el sprite
+
+// ==============================
+// DEFINICIÓN DEL JUEGO (TUTE)
+// ==============================
+
+// Palos del Tute con su fila real en el sprite
 const PALOS = [
     { nombre: "oros", fila: 0 },
     { nombre: "copas", fila: 1 },
@@ -9,7 +18,7 @@ const PALOS = [
     { nombre: "bastos", fila: 3 }
 ];
 
-// Valores del Tute con su COLUMNA REAL en el sprite
+// Valores reales del Tute (sin 8 ni 9) con su columna en el sprite
 const VALORES = [
     { nombre: "as", columna: 0 },
     { nombre: "dos", columna: 1 },
@@ -18,15 +27,39 @@ const VALORES = [
     { nombre: "cinco", columna: 4 },
     { nombre: "seis", columna: 5 },
     { nombre: "siete", columna: 6 },
-    // 7 y 8 (ocho y nueve) se ignoran
+    // columnas 7 y 8 (ocho y nueve) se ignoran
     { nombre: "sota", columna: 9 },
     { nombre: "caballo", columna: 10 },
     { nombre: "rey", columna: 11 }
 ];
 
-// Crear baraja REAL del Tute (40 cartas)
+
+// ==============================
+// CREACIÓN DE LA BARAJA
+// ==============================
+
 function crearBaraja() {
-   // Puntos de cada carta según el Tute
+    const baraja = [];
+
+    PALOS.forEach(palo => {
+        VALORES.forEach(valor => {
+            baraja.push({
+                palo: palo.nombre,
+                valor: valor.nombre,
+                fila: palo.fila,
+                columna: valor.columna
+            });
+        });
+    });
+
+    return baraja; // 40 cartas
+}
+
+
+// ==============================
+// PUNTUACIÓN DEL TUTE
+// ==============================
+
 function puntosCarta(valor) {
     switch (valor) {
         case "as":
@@ -43,21 +76,21 @@ function puntosCarta(valor) {
             return 0;
     }
 }
-    const baraja = [];
 
-    PALOS.forEach(palo => {
-        VALORES.forEach(valor => {
-            baraja.push({
-                palo: palo.nombre,
-                valor: valor.nombre,
-                fila: palo.fila,
-                columna: valor.columna
-            });
-        });
+function puntosMano(mano) {
+    let total = 0;
+
+    mano.forEach(carta => {
+        total += puntosCarta(carta.valor);
     });
 
-    return baraja;
+    return total;
 }
+
+
+// ==============================
+// REPARTO DE CARTAS (10)
+// ==============================
 
 function repartir() {
     const mesa = document.getElementById("mesa");
@@ -68,12 +101,16 @@ function repartir() {
     mesa.style.gap = "10px";
     mesa.style.overflowX = "auto";
     mesa.style.padding = "10px";
+    mesa.style.alignItems = "flex-start";
 
+    // Crear y barajar la baraja
     const baraja = crearBaraja();
     baraja.sort(() => Math.random() - 0.5);
 
+    // Mano real del Tute (10 cartas)
     const mano = baraja.slice(0, 10);
 
+    // Mostrar cartas
     mano.forEach(carta => {
         const div = document.createElement("div");
 
@@ -90,4 +127,15 @@ function repartir() {
 
         mesa.appendChild(div);
     });
+
+    // Mostrar puntos de la mano (prueba lógica)
+    const puntos = puntosMano(mano);
+
+    const info = document.createElement("div");
+    info.style.color = "white";
+    info.style.marginLeft = "20px";
+    info.style.fontSize = "18px";
+    info.textContent = "Puntos de la mano: " + puntos;
+
+    mesa.appendChild(info);
 }
