@@ -1,17 +1,15 @@
-// Tamaño de cada carta en el sprite
 const ANCHO_CARTA = 208;
 const ALTO_CARTA = 319;
 
-// Palos del Tute (cada palo corresponde a una fila del sprite)
+// Palos del Tute con su FILA REAL en el sprite
 const PALOS = [
-    "oros",     // fila 0
-    "copas",    // fila 1
-    "espadas",  // fila 2
-    "bastos"    // fila 3
+    { nombre: "oros", fila: 0 },
+    { nombre: "copas", fila: 1 },
+    { nombre: "espadas", fila: 2 },
+    { nombre: "bastos", fila: 3 }
 ];
 
-// Valores reales del Tute con su columna en el sprite
-// (se excluyen ocho y nueve)
+// Valores del Tute con su COLUMNA REAL en el sprite
 const VALORES = [
     { nombre: "as", columna: 0 },
     { nombre: "dos", columna: 1 },
@@ -20,22 +18,22 @@ const VALORES = [
     { nombre: "cinco", columna: 4 },
     { nombre: "seis", columna: 5 },
     { nombre: "siete", columna: 6 },
-    // columnas 7 y 8 (ocho y nueve) NO se usan
+    // 7 y 8 (ocho y nueve) se ignoran
     { nombre: "sota", columna: 9 },
     { nombre: "caballo", columna: 10 },
     { nombre: "rey", columna: 11 }
 ];
 
-// Crear la baraja completa del Tute (40 cartas)
+// Crear baraja REAL del Tute (40 cartas)
 function crearBaraja() {
     const baraja = [];
 
-    PALOS.forEach((palo, fila) => {
+    PALOS.forEach(palo => {
         VALORES.forEach(valor => {
             baraja.push({
-                palo: palo,
+                palo: palo.nombre,
                 valor: valor.nombre,
-                fila: fila,
+                fila: palo.fila,
                 columna: valor.columna
             });
         });
@@ -44,22 +42,19 @@ function crearBaraja() {
     return baraja;
 }
 
-// Repartir 5 cartas aleatorias
 function repartir() {
     const mesa = document.getElementById("mesa");
     mesa.innerHTML = "";
 
-    // Forzamos layout estable desde JavaScript
+    // Layout forzado desde JS (estable)
     mesa.style.display = "flex";
     mesa.style.gap = "10px";
     mesa.style.overflowX = "auto";
     mesa.style.padding = "10px";
 
-    // Crear y barajar la baraja
     const baraja = crearBaraja();
     baraja.sort(() => Math.random() - 0.5);
 
-    // Mano de 5 cartas
     const mano = baraja.slice(0, 5);
 
     mano.forEach(carta => {
@@ -79,7 +74,3 @@ function repartir() {
         mesa.appendChild(div);
     });
 }
-
-}
-
-
