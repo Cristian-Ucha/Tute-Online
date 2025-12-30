@@ -5,12 +5,19 @@ function repartir() {
     const mesa = document.getElementById("mesa");
     mesa.innerHTML = "";
 
+    // FORZAMOS EL LAYOUT DESDE JS (CLAVE)
+    mesa.style.display = "flex";
+    mesa.style.gap = "10px";
+    mesa.style.overflowX = "auto";
+    mesa.style.padding = "10px";
+    mesa.style.border = "2px solid red"; // solo para ver el área
+
     const cartas = [
-        { fila: 0, columna: 0 },   // carta 1
-        { fila: 0, columna: 3 },   // carta 2
-        { fila: 1, columna: 1 },   // carta 3
-        { fila: 2, columna: 5 },   // carta 4
-        { fila: 4, columna: 10 }   // carta 5
+        { fila: 0, columna: 0 },
+        { fila: 0, columna: 3 },
+        { fila: 1, columna: 1 },
+        { fila: 2, columna: 5 },
+        { fila: 4, columna: 10 }
     ];
 
     cartas.forEach(c => {
@@ -32,4 +39,5 @@ function repartir() {
         mesa.appendChild(carta);
     });
 }
+
 
