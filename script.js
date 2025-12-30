@@ -26,6 +26,23 @@ const VALORES = [
 
 // Crear baraja REAL del Tute (40 cartas)
 function crearBaraja() {
+   // Puntos de cada carta según el Tute
+function puntosCarta(valor) {
+    switch (valor) {
+        case "as":
+            return 11;
+        case "tres":
+            return 10;
+        case "rey":
+            return 4;
+        case "caballo":
+            return 3;
+        case "sota":
+            return 2;
+        default:
+            return 0;
+    }
+}
     const baraja = [];
 
     PALOS.forEach(palo => {
