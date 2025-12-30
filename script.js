@@ -1,4 +1,5 @@
 alert("script.js cargado");
+
 const ANCHO_CARTA = 208; // 2496 / 12
 const ALTO_CARTA = 319;  // 1595 / 5
 
