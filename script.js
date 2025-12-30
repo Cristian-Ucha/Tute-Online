@@ -10,6 +10,7 @@ const ALTO_CARTA = 319;
 // DEFINICIÓN DEL JUEGO (TUTE)
 // ==============================
 
+// Palos del Tute con su fila real en el sprite
 const PALOS = [
     { nombre: "oros", fila: 0 },
     { nombre: "copas", fila: 1 },
@@ -17,6 +18,7 @@ const PALOS = [
     { nombre: "bastos", fila: 3 }
 ];
 
+// Valores reales del Tute (sin 8 ni 9) con su columna en el sprite
 const VALORES = [
     { nombre: "as", columna: 0 },
     { nombre: "dos", columna: 1 },
@@ -25,6 +27,7 @@ const VALORES = [
     { nombre: "cinco", columna: 4 },
     { nombre: "seis", columna: 5 },
     { nombre: "siete", columna: 6 },
+    // columnas 7 y 8 (ocho y nueve) se ignoran
     { nombre: "sota", columna: 9 },
     { nombre: "caballo", columna: 10 },
     { nombre: "rey", columna: 11 }
@@ -32,7 +35,7 @@ const VALORES = [
 
 
 // ==============================
-// BARAJA
+// CREACIÓN DE LA BARAJA
 // ==============================
 
 function crearBaraja() {
@@ -49,12 +52,12 @@ function crearBaraja() {
         });
     });
 
-    return baraja;
+    return baraja; // 40 cartas
 }
 
 
 // ==============================
-// PUNTUACIÓN
+// PUNTUACIÓN DEL TUTE
 // ==============================
 
 function puntosCarta(valor) {
@@ -69,7 +72,10 @@ function puntosCarta(valor) {
 }
 
 function puntosMano(mano) {
-    return mano.reduce((total, carta) => total + puntosCarta(carta.valor), 0);
+    return mano.reduce(
+        (total, carta) => total + puntosCarta(carta.valor),
+        0
+    );
 }
 
 
@@ -81,15 +87,24 @@ function repartir() {
     const mesa = document.getElementById("mesa");
     mesa.innerHTML = "";
 
-    // Layout tipo juego real (solapado)
+    // Fondo general del juego (tapete)
+    document.body.style.backgroundColor = "#0b5c3b";
+    document.body.style.margin = "0";
+    document.body.style.minHeight = "100vh";
+
+    // Layout tipo juego real (cartas solapadas)
     mesa.style.display = "flex";
     mesa.style.justifyContent = "center";
     mesa.style.alignItems = "flex-end";
     mesa.style.padding = "20px";
 
+    // Crear y barajar la baraja
     const baraja = crearBaraja().sort(() => Math.random() - 0.5);
+
+    // Mano real del Tute (10 cartas)
     const mano = baraja.slice(0, 10);
 
+    // Mostrar cartas
     mano.forEach((carta, index) => {
         const div = document.createElement("div");
 
@@ -103,12 +118,13 @@ function repartir() {
 
         div.style.backgroundPosition = `-${x}px -${y}px`;
 
-        // SOLAPAMIENTO (CLAVE)
+        // Solapamiento horizontal (clave para que quepan)
         div.style.marginLeft = index === 0 ? "0px" : "-120px";
 
         mesa.appendChild(div);
     });
 
+    // Mostrar puntuación total
     mostrarPuntuacion(mano);
 }
 
@@ -125,7 +141,11 @@ function mostrarPuntuacion(mano) {
         info.id = "puntuacion";
         info.style.marginTop = "10px";
         info.style.fontSize = "20px";
-        info.style.color = "white";
+        info.style.color = "#ffffff";
+        info.style.backgroundColor = "rgba(0, 0, 0, 0.4)";
+        info.style.display = "inline-block";
+        info.style.padding = "6px 12px";
+        info.style.borderRadius = "8px";
         info.style.textAlign = "center";
         document.body.appendChild(info);
     }
