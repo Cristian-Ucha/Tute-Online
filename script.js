@@ -7,6 +7,7 @@ alert("script.js cargado");
 const ANCHO_CARTA = 208;
 const ALTO_CARTA = 319;
 
+
 // ==============================
 // DEFINICIÓN DEL JUEGO (TUTE)
 // ==============================
@@ -31,8 +32,14 @@ const VALORES = [
     { nombre: "rey", columna: 11 }
 ];
 
+
+// ==============================
+// CREACIÓN DE LA BARAJA
+// ==============================
+
 function crearBaraja() {
     const baraja = [];
+
     PALOS.forEach(palo => {
         VALORES.forEach(valor => {
             baraja.push({
@@ -43,8 +50,14 @@ function crearBaraja() {
             });
         });
     });
+
     return baraja;
 }
+
+
+// ==============================
+// PUNTUACIÓN DEL TUTE
+// ==============================
 
 function puntosCarta(valor) {
     switch (valor) {
@@ -61,20 +74,26 @@ function puntosMano(mano) {
     return mano.reduce((t, c) => t + puntosCarta(c.valor), 0);
 }
 
+
 // ==============================
-// REPARTIR
+// REPARTO REAL (10 CARTAS)
 // ==============================
 
 function repartir() {
     const mesa = document.getElementById("mesa");
     mesa.innerHTML = "";
 
+    // Fondo general
     document.body.style.backgroundColor = "#0b5c3b";
+    document.body.style.margin = "0";
+    document.body.style.minHeight = "100vh";
 
+    // Layout base
     mesa.style.display = "flex";
     mesa.style.justifyContent = "center";
     mesa.style.alignItems = "flex-end";
     mesa.style.padding = "20px";
+    mesa.style.position = "relative";
 
     const baraja = crearBaraja().sort(() => Math.random() - 0.5);
     const mano = baraja.slice(0, 10);
@@ -82,8 +101,11 @@ function repartir() {
     mano.forEach((carta, index) => {
         const div = document.createElement("div");
 
+        // Tamaño carta
         div.style.width = ANCHO_CARTA + "px";
         div.style.height = ALTO_CARTA + "px";
+
+        // Sprite
         div.style.backgroundImage = "url('cartas/baraja.png')";
         div.style.backgroundRepeat = "no-repeat";
 
@@ -91,8 +113,26 @@ function repartir() {
         const y = carta.fila * ALTO_CARTA;
         div.style.backgroundPosition = `-${x}px -${y}px`;
 
+        // Solapamiento
         div.style.marginLeft = index === 0 ? "0px" : "-120px";
+
+        // Estado base
         div.style.zIndex = index;
+        div.style.transition = "transform 0.15s ease";
+
+        // ==========================
+        // HOVER (ELEVAR CARTA)
+        // ==========================
+
+        div.addEventListener("mouseenter", () => {
+            div.style.transform = "translateY(-40px)";
+            div.style.zIndex = 1000;
+        });
+
+        div.addEventListener("mouseleave", () => {
+            div.style.transform = "translateY(0)";
+            div.style.zIndex = index;
+        });
 
         mesa.appendChild(div);
     });
@@ -100,20 +140,34 @@ function repartir() {
     mostrarPuntuacion(mano);
 }
 
+
+// ==============================
+// MOSTRAR PUNTUACIÓN
+// ==============================
+
 function mostrarPuntuacion(mano) {
     let info = document.getElementById("puntuacion");
+
     if (!info) {
         info = document.createElement("div");
         info.id = "puntuacion";
-        info.style.color = "white";
-        info.style.margin = "10px";
+        info.style.marginTop = "10px";
+        info.style.fontSize = "20px";
+        info.style.color = "#ffffff";
+        info.style.backgroundColor = "rgba(0, 0, 0, 0.4)";
+        info.style.display = "inline-block";
+        info.style.padding = "6px 12px";
+        info.style.borderRadius = "8px";
+        info.style.textAlign = "center";
         document.body.appendChild(info);
     }
+
     info.textContent = "Puntos de la mano: " + puntosMano(mano);
 }
 
+
 // ==============================
-// ENGANCHE DEL BOTÓN (CLAVE)
+// ENGANCHE DEL BOTÓN
 // ==============================
 
 document.addEventListener("DOMContentLoaded", () => {
