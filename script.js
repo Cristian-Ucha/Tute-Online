@@ -1,23 +1,17 @@
 alert("script.js cargado");
 
 // ==============================
-// CONFIGURACIÓN REAL DEL SPRITE
+// CONFIGURACIÓN
 // ==============================
 
 const ANCHO_CARTA = 208;
 const ALTO_CARTA = 319;
 
-
-// ==============================
-// ESTADO DEL JUEGO
-// ==============================
-
 let manoJugador = [];
 let bazaActual = [];
 
-
 // ==============================
-// DEFINICIÓN DEL JUEGO (TUTE)
+// DATOS DEL JUEGO
 // ==============================
 
 const PALOS = [
@@ -40,9 +34,8 @@ const VALORES = [
     { nombre: "rey", columna: 11 }
 ];
 
-
 // ==============================
-// CREACIÓN DE LA BARAJA
+// BARAJA
 // ==============================
 
 function crearBaraja() {
@@ -60,48 +53,37 @@ function crearBaraja() {
     return baraja;
 }
 
-
 // ==============================
-// PUNTUACIÓN
-// ==============================
-
-function puntosCarta(valor) {
-    switch (valor) {
-        case "as": return 11;
-        case "tres": return 10;
-        case "rey": return 4;
-        case "caballo": return 3;
-        case "sota": return 2;
-        default: return 0;
-    }
-}
-
-
-// ==============================
-// REPARTO
+// REPARTIR
 // ==============================
 
 function repartir() {
+    console.log("Repartir llamado");
+
     const mesa = document.getElementById("mesa");
-    mesa.innerHTML = "";
+    const baza = document.getElementById("baza");
+
+    if (!mesa || !baza) {
+        alert("ERROR: falta #mesa o #baza en el HTML");
+        return;
+    }
 
     document.body.style.backgroundColor = "#0b5c3b";
+
+    mesa.innerHTML = "";
+    baza.innerHTML = "";
 
     mesa.style.display = "flex";
     mesa.style.justifyContent = "center";
     mesa.style.alignItems = "flex-end";
     mesa.style.padding = "20px";
-    mesa.style.position = "relative";
 
     const baraja = crearBaraja().sort(() => Math.random() - 0.5);
-
     manoJugador = baraja.slice(0, 10);
     bazaActual = [];
 
     renderMano();
-    renderBaza();
 }
-
 
 // ==============================
 // RENDER MANO
@@ -118,7 +100,6 @@ function renderMano() {
         div.style.zIndex = index;
         div.style.transition = "transform 0.15s ease";
 
-        // Hover
         div.addEventListener("mouseenter", () => {
             div.style.transform = "translateY(-40px)";
             div.style.zIndex = 1000;
@@ -129,7 +110,6 @@ function renderMano() {
             div.style.zIndex = index;
         });
 
-        // Click → jugar carta
         div.addEventListener("click", () => {
             jugarCarta(index);
         });
@@ -137,34 +117,6 @@ function renderMano() {
         mesa.appendChild(div);
     });
 }
-
-
-// ==============================
-// RENDER BAZA
-// ==============================
-
-function renderBaza() {
-    let zona = document.getElementById("baza");
-
-    if (!zona) {
-        zona = document.createElement("div");
-        zona.id = "baza";
-        zona.style.display = "flex";
-        zona.style.justifyContent = "center";
-        zona.style.marginTop = "30px";
-        zona.style.minHeight = ALTO_CARTA + "px";
-        document.body.appendChild(zona);
-    }
-
-    zona.innerHTML = "";
-
-    bazaActual.forEach(carta => {
-        const div = crearCartaDiv(carta);
-        div.style.margin = "0 10px";
-        zona.appendChild(div);
-    });
-}
-
 
 // ==============================
 // JUGAR CARTA
@@ -178,14 +130,31 @@ function jugarCarta(indice) {
     renderBaza();
 }
 
+// ==============================
+// RENDER BAZA
+// ==============================
+
+function renderBaza() {
+    const baza = document.getElementById("baza");
+    baza.innerHTML = "";
+
+    baza.style.display = "flex";
+    baza.style.justifyContent = "center";
+    baza.style.marginTop = "30px";
+
+    bazaActual.forEach(carta => {
+        const div = crearCartaDiv(carta);
+        div.style.margin = "0 10px";
+        baza.appendChild(div);
+    });
+}
 
 // ==============================
-// CREAR CARTA VISUAL
+// CARTA VISUAL
 // ==============================
 
 function crearCartaDiv(carta) {
     const div = document.createElement("div");
-
     div.style.width = ANCHO_CARTA + "px";
     div.style.height = ALTO_CARTA + "px";
     div.style.backgroundImage = "url('cartas/baraja.png')";
@@ -193,23 +162,20 @@ function crearCartaDiv(carta) {
 
     const x = carta.columna * ANCHO_CARTA;
     const y = carta.fila * ALTO_CARTA;
-
     div.style.backgroundPosition = `-${x}px -${y}px`;
 
     return div;
 }
-
 
 // ==============================
 // BOTÓN
 // ==============================
 
 document.addEventListener("DOMContentLoaded", () => {
-    document
-        .getElementById("btnRepartir")
-        .addEventListener("click", repartir);
-});
-
-        .getElementById("btnRepartir")
-        .addEventListener("click", repartir);
+    const btn = document.getElementById("btnRepartir");
+    if (!btn) {
+        alert("ERROR: no existe el botón btnRepartir");
+        return;
+    }
+    btn.addEventListener("click", repartir);
 });
