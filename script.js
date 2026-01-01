@@ -54,21 +54,37 @@ function crearBaraja() {
 }
 
 // ==============================
+// PUNTOS
+// ==============================
+
+function puntosCarta(valor) {
+    switch (valor) {
+        case "as": return 11;
+        case "tres": return 10;
+        case "rey": return 4;
+        case "caballo": return 3;
+        case "sota": return 2;
+        default: return 0;
+    }
+}
+
+function puntosMano(mano) {
+    return mano.reduce((total, carta) => total + puntosCarta(carta.valor), 0);
+}
+
+// ==============================
 // REPARTIR
 // ==============================
 
 function repartir() {
-    console.log("Repartir llamado");
-
     const mesa = document.getElementById("mesa");
     const baza = document.getElementById("baza");
 
-    if (!mesa || !baza) {
-        alert("ERROR: falta #mesa o #baza en el HTML");
-        return;
-    }
-
     document.body.style.backgroundColor = "#0b5c3b";
+    document.body.style.margin = "0";
+
+    document.getElementById("titulo").style.color = "white";
+    document.getElementById("titulo").style.textAlign = "center";
 
     mesa.innerHTML = "";
     baza.innerHTML = "";
@@ -78,15 +94,21 @@ function repartir() {
     mesa.style.alignItems = "flex-end";
     mesa.style.padding = "20px";
 
+    baza.style.display = "flex";
+    baza.style.justifyContent = "center";
+    baza.style.marginTop = "30px";
+
     const baraja = crearBaraja().sort(() => Math.random() - 0.5);
+
     manoJugador = baraja.slice(0, 10);
     bazaActual = [];
 
     renderMano();
+    mostrarPuntuacion();
 }
 
 // ==============================
-// RENDER MANO
+// MANO
 // ==============================
 
 function renderMano() {
@@ -128,19 +150,16 @@ function jugarCarta(indice) {
 
     renderMano();
     renderBaza();
+    mostrarPuntuacion();
 }
 
 // ==============================
-// RENDER BAZA
+// BAZA
 // ==============================
 
 function renderBaza() {
     const baza = document.getElementById("baza");
     baza.innerHTML = "";
-
-    baza.style.display = "flex";
-    baza.style.justifyContent = "center";
-    baza.style.marginTop = "30px";
 
     bazaActual.forEach(carta => {
         const div = crearCartaDiv(carta);
@@ -155,6 +174,7 @@ function renderBaza() {
 
 function crearCartaDiv(carta) {
     const div = document.createElement("div");
+
     div.style.width = ANCHO_CARTA + "px";
     div.style.height = ALTO_CARTA + "px";
     div.style.backgroundImage = "url('cartas/baraja.png')";
@@ -168,14 +188,30 @@ function crearCartaDiv(carta) {
 }
 
 // ==============================
+// PUNTUACIÓN VISUAL
+// ==============================
+
+function mostrarPuntuacion() {
+    let info = document.getElementById("puntuacion");
+
+    if (!info) {
+        info = document.createElement("div");
+        info.id = "puntuacion";
+        info.style.color = "white";
+        info.style.textAlign = "center";
+        info.style.marginTop = "10px";
+        document.body.appendChild(info);
+    }
+
+    info.textContent = "Puntos de la mano: " + puntosMano(manoJugador);
+}
+
+// ==============================
 // BOTÓN
 // ==============================
 
 document.addEventListener("DOMContentLoaded", () => {
-    const btn = document.getElementById("btnRepartir");
-    if (!btn) {
-        alert("ERROR: no existe el botón btnRepartir");
-        return;
-    }
-    btn.addEventListener("click", repartir);
+    document
+        .getElementById("btnRepartir")
+        .addEventListener("click", repartir);
 });
