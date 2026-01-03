@@ -18,6 +18,9 @@ let bazaActual = [];
 let esperandoAutomatico = false;
 
 let triunfo = null;
+let cartaTriunfo = null;
+
+let jugadorQueDa = null;
 
 let bazasJugadas = 0;
 let manoTerminada = false;
@@ -79,7 +82,7 @@ function crearBaraja() {
 }
 
 // ==============================
-// REPARTO + TRIUNFO
+// REPARTO + JUGADOR QUE DA + TRIUNFO
 // ==============================
 
 function repartir() {
@@ -95,18 +98,26 @@ function repartir() {
 
     const baraja = crearBaraja().sort(() => Math.random() - 0.5);
 
-    // Carta de triunfo (por ahora simple)
-    const cartaTriunfo = baraja.pop();
-    triunfo = cartaTriunfo.palo;
+    // 👉 Elegimos jugador que da SOLO si es la primera mano
+    if (jugadorQueDa === null) {
+        jugadorQueDa = Math.floor(Math.random() * 4);
+    }
 
+    // Reparto completo
     for (let i = 0; i < 10; i++) {
         jugadores.forEach(j => j.mano.push(baraja.pop()));
     }
 
-    turnoActual = 0;
+    // 👉 Carta de triunfo sacada de la MANO del jugador que da
+    const manoDelQueDa = jugadores[jugadorQueDa].mano;
+    cartaTriunfo = manoDelQueDa[Math.floor(Math.random() * manoDelQueDa.length)];
+    triunfo = cartaTriunfo.palo;
+
+    // 👉 Sale el siguiente jugador
+    turnoActual = (jugadorQueDa + 1) % 4;
+
     bazaActual = [];
     esperandoAutomatico = false;
-
     bazasJugadas = 0;
     manoTerminada = false;
 
@@ -173,25 +184,24 @@ function jugarAutomatico() {
 }
 
 // ==============================
-// RESOLVER BAZA
+// RESOLVER BAZA (CON TRIUNFO)
 // ==============================
 
 function resolverBaza() {
     let ganadora = bazaActual[0];
 
     bazaActual.forEach(jugada => {
-        const carta = jugada.carta;
-        const cartaGanadora = ganadora.carta;
+        const c = jugada.carta;
+        const g = ganadora.carta;
 
-        // Triunfo gana siempre
-        if (carta.palo === triunfo && cartaGanadora.palo !== triunfo) {
+        if (c.palo === triunfo && g.palo !== triunfo) {
             ganadora = jugada;
             return;
         }
 
-        if (carta.palo === cartaGanadora.palo) {
-            const v1 = ORDEN_VALORES.indexOf(carta.valor);
-            const v2 = ORDEN_VALORES.indexOf(cartaGanadora.valor);
+        if (c.palo === g.palo) {
+            const v1 = ORDEN_VALORES.indexOf(c.valor);
+            const v2 = ORDEN_VALORES.indexOf(g.valor);
             if (v1 > v2) ganadora = jugada;
         }
     });
@@ -279,20 +289,28 @@ function renderMesaJugador() {
 }
 
 // ==============================
-// TRIUNFO VISIBLE
+// TRIUNFO VISIBLE (CARTA REAL)
 // ==============================
 
 function renderTriunfo() {
-    let div = document.getElementById("triunfo");
-    if (!div) {
-        div = document.createElement("div");
-        div.id = "triunfo";
-        div.style.color = "white";
-        div.style.textAlign = "center";
-        div.style.marginTop = "5px";
-        document.body.appendChild(div);
+    let cont = document.getElementById("triunfo");
+    if (!cont) {
+        cont = document.createElement("div");
+        cont.id = "triunfo";
+        cont.style.textAlign = "center";
+        cont.style.marginTop = "10px";
+        document.body.appendChild(cont);
     }
-    div.textContent = "Triunfo: " + triunfo;
+
+    cont.innerHTML = "";
+    cont.style.color = "white";
+    cont.textContent = "Triunfo";
+
+    if (cartaTriunfo) {
+        const carta = crearCartaDiv(cartaTriunfo);
+        carta.style.margin = "10px auto";
+        cont.appendChild(carta);
+    }
 }
 
 // ==============================
