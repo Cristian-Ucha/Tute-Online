@@ -113,9 +113,10 @@ function jugarCarta(idJugador, indice) {
     const carta = jugadores[idJugador].mano.splice(indice, 1)[0];
     bazaActual.push({ jugador: idJugador, carta });
 
-    // ¿Baza completa?
+    // 👉 Si la baza se completa, se muestra y se cierra tras 1200 ms
     if (bazaActual.length === 4) {
-        setTimeout(cerrarBaza, 800);
+        render(); // fuerza render con las 4 cartas visibles
+        setTimeout(cerrarBaza, 1200);
         return;
     }
 
@@ -125,11 +126,10 @@ function jugarCarta(idJugador, indice) {
 }
 
 // ==============================
-// CERRAR BAZA (CLAVE)
+// CERRAR BAZA
 // ==============================
 
 function cerrarBaza() {
-    // (De momento no calculamos ganador)
     bazaActual = [];
     turnoActual = 0;
     esperandoAutomatico = false;
@@ -142,13 +142,15 @@ function cerrarBaza() {
 
 function jugarAutomatico() {
     if (turnoActual === 0) return;
+
     const jugador = jugadores[turnoActual];
     if (!jugador || jugador.mano.length === 0) return;
+
     jugarCarta(turnoActual, 0);
 }
 
 // ==============================
-// RENDER MANO JUGADOR
+// MANO JUGADOR 0
 // ==============================
 
 function renderMesaJugador() {
@@ -187,7 +189,7 @@ function renderMesaJugador() {
 }
 
 // ==============================
-// RIVALES
+// RIVALES (DORSOS)
 // ==============================
 
 function renderRivales() {
@@ -306,3 +308,4 @@ document.addEventListener("DOMContentLoaded", () => {
         .getElementById("btnRepartir")
         .addEventListener("click", repartir);
 });
+
