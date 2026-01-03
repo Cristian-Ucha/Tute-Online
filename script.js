@@ -29,6 +29,19 @@ const PALOS = [
     { nombre: "bastos", fila: 3 }
 ];
 
+const ORDEN_VALORES = [
+    "dos",
+    "cuatro",
+    "cinco",
+    "seis",
+    "siete",
+    "sota",
+    "caballo",
+    "rey",
+    "tres",
+    "as"
+];
+
 const VALORES = [
     { nombre: "as", columna: 0 },
     { nombre: "dos", columna: 1 },
@@ -106,32 +119,37 @@ function render() {
 }
 
 // ==============================
+// CARTAS LEGALES
+// ==============================
+
+function cartasLegales(jugador) {
+    if (bazaActual.length === 0) {
+        return jugador.mano;
+    }
+
+    const paloSalida = bazaActual[0].carta.palo;
+    const cartasDelPalo = jugador.mano.filter(c => c.palo === paloSalida);
+
+    return cartasDelPalo.length > 0 ? cartasDelPalo : jugador.mano;
+}
+
+// ==============================
 // JUGAR CARTA
 // ==============================
 
-function jugarCarta(idJugador, indice) {
-    const carta = jugadores[idJugador].mano.splice(indice, 1)[0];
+function jugarCarta(idJugador, indiceReal) {
+    const jugador = jugadores[idJugador];
+    const carta = jugador.mano.splice(indiceReal, 1)[0];
+
     bazaActual.push({ jugador: idJugador, carta });
 
-    // 👉 Si la baza se completa, se muestra y se cierra tras 1200 ms
     if (bazaActual.length === 4) {
-        render(); // fuerza render con las 4 cartas visibles
-        setTimeout(cerrarBaza, 1200);
+        render();
+        setTimeout(resolverBaza, 1200);
         return;
     }
 
     turnoActual = (turnoActual + 1) % 4;
-    esperandoAutomatico = false;
-    render();
-}
-
-// ==============================
-// CERRAR BAZA
-// ==============================
-
-function cerrarBaza() {
-    bazaActual = [];
-    turnoActual = 0;
     esperandoAutomatico = false;
     render();
 }
@@ -146,11 +164,43 @@ function jugarAutomatico() {
     const jugador = jugadores[turnoActual];
     if (!jugador || jugador.mano.length === 0) return;
 
-    jugarCarta(turnoActual, 0);
+    const legales = cartasLegales(jugador);
+    const cartaElegida = legales[0];
+    const indiceReal = jugador.mano.indexOf(cartaElegida);
+
+    jugarCarta(turnoActual, indiceReal);
 }
 
 // ==============================
-// MANO JUGADOR 0
+// RESOLVER BAZA
+// ==============================
+
+function resolverBaza() {
+    const paloSalida = bazaActual[0].carta.palo;
+    let ganadora = bazaActual[0];
+
+    bazaActual.forEach(jugada => {
+        if (jugada.carta.palo !== paloSalida) return;
+
+        const vActual = ORDEN_VALORES.indexOf(jugada.carta.valor);
+        const vGanador = ORDEN_VALORES.indexOf(ganadora.carta.valor);
+
+        if (vActual > vGanador) {
+            ganadora = jugada;
+        }
+    });
+
+    jugadores[ganadora.jugador].bazas.push([...bazaActual]);
+
+    turnoActual = ganadora.jugador;
+    bazaActual = [];
+    esperandoAutomatico = false;
+
+    render();
+}
+
+// ==============================
+// MANO JUGADOR HUMANO
 // ==============================
 
 function renderMesaJugador() {
@@ -162,34 +212,41 @@ function renderMesaJugador() {
     mesa.style.alignItems = "flex-end";
     mesa.style.padding = "20px";
 
+    const legales = cartasLegales(jugadores[0]);
+
     jugadores[0].mano.forEach((carta, index) => {
         const div = crearCartaDiv(carta);
+
+        const esLegal = legales.includes(carta);
+        div.style.opacity = esLegal ? "1" : "0.4";
 
         div.style.marginLeft = index === 0 ? "0px" : "-120px";
         div.style.zIndex = index;
         div.style.transition = "transform 0.15s ease";
 
-        div.addEventListener("mouseenter", () => {
-            div.style.transform = "translateY(-40px)";
-            div.style.zIndex = 1000;
-        });
+        if (esLegal) {
+            div.addEventListener("mouseenter", () => {
+                div.style.transform = "translateY(-40px)";
+                div.style.zIndex = 1000;
+            });
 
-        div.addEventListener("mouseleave", () => {
-            div.style.transform = "translateY(0)";
-            div.style.zIndex = index;
-        });
+            div.addEventListener("mouseleave", () => {
+                div.style.transform = "translateY(0)";
+                div.style.zIndex = index;
+            });
 
-        div.addEventListener("click", () => {
-            if (turnoActual !== 0) return;
-            jugarCarta(0, index);
-        });
+            div.addEventListener("click", () => {
+                if (turnoActual !== 0) return;
+                jugarCarta(0, index);
+            });
+        }
 
         mesa.appendChild(div);
     });
 }
 
 // ==============================
-// RIVALES (DORSOS)
+// RIVALES
 // ==============================
 
 function renderRivales() {
@@ -308,4 +365,3 @@ document.addEventListener("DOMContentLoaded", () => {
         .getElementById("btnRepartir")
         .addEventListener("click", repartir);
 });
-
