@@ -6,7 +6,6 @@ alert("script.js cargado");
 
 const ANCHO_CARTA = 208;
 const ALTO_CARTA = 319;
-
 const DORSO = { fila: 4, columna: 1 };
 
 // ==============================
@@ -17,6 +16,11 @@ let jugadores = [];
 let turnoActual = 0;
 let bazaActual = [];
 let esperandoAutomatico = false;
+
+let triunfo = null;
+
+let bazasJugadas = 0;
+let manoTerminada = false;
 
 // ==============================
 // DATOS DEL TUTE
@@ -75,7 +79,7 @@ function crearBaraja() {
 }
 
 // ==============================
-// REPARTO
+// REPARTO + TRIUNFO
 // ==============================
 
 function repartir() {
@@ -91,6 +95,10 @@ function repartir() {
 
     const baraja = crearBaraja().sort(() => Math.random() - 0.5);
 
+    // Carta de triunfo (por ahora simple)
+    const cartaTriunfo = baraja.pop();
+    triunfo = cartaTriunfo.palo;
+
     for (let i = 0; i < 10; i++) {
         jugadores.forEach(j => j.mano.push(baraja.pop()));
     }
@@ -99,38 +107,28 @@ function repartir() {
     bazaActual = [];
     esperandoAutomatico = false;
 
+    bazasJugadas = 0;
+    manoTerminada = false;
+
     render();
 }
 
 // ==============================
-// RENDER GENERAL
-// ==============================
-
-function render() {
-    renderMesaJugador();
-    renderRivales();
-    renderBaza();
-    renderTurno();
-
-    if (turnoActual !== 0 && bazaActual.length < 4 && !esperandoAutomatico) {
-        esperandoAutomatico = true;
-        setTimeout(jugarAutomatico, 600);
-    }
-}
-
-// ==============================
-// CARTAS LEGALES
+// CARTAS LEGALES (ASISTIR + TRIUNFO)
 // ==============================
 
 function cartasLegales(jugador) {
-    if (bazaActual.length === 0) {
-        return jugador.mano;
-    }
+    if (bazaActual.length === 0) return jugador.mano;
 
     const paloSalida = bazaActual[0].carta.palo;
-    const cartasDelPalo = jugador.mano.filter(c => c.palo === paloSalida);
 
-    return cartasDelPalo.length > 0 ? cartasDelPalo : jugador.mano;
+    const delPalo = jugador.mano.filter(c => c.palo === paloSalida);
+    if (delPalo.length > 0) return delPalo;
+
+    const triunfos = jugador.mano.filter(c => c.palo === triunfo);
+    if (triunfos.length > 0) return triunfos;
+
+    return jugador.mano;
 }
 
 // ==============================
@@ -138,6 +136,8 @@ function cartasLegales(jugador) {
 // ==============================
 
 function jugarCarta(idJugador, indiceReal) {
+    if (manoTerminada) return;
+
     const jugador = jugadores[idJugador];
     const carta = jugador.mano.splice(indiceReal, 1)[0];
 
@@ -159,6 +159,7 @@ function jugarCarta(idJugador, indiceReal) {
 // ==============================
 
 function jugarAutomatico() {
+    if (manoTerminada) return;
     if (turnoActual === 0) return;
 
     const jugador = jugadores[turnoActual];
@@ -176,27 +177,60 @@ function jugarAutomatico() {
 // ==============================
 
 function resolverBaza() {
-    const paloSalida = bazaActual[0].carta.palo;
     let ganadora = bazaActual[0];
 
     bazaActual.forEach(jugada => {
-        if (jugada.carta.palo !== paloSalida) return;
+        const carta = jugada.carta;
+        const cartaGanadora = ganadora.carta;
 
-        const vActual = ORDEN_VALORES.indexOf(jugada.carta.valor);
-        const vGanador = ORDEN_VALORES.indexOf(ganadora.carta.valor);
-
-        if (vActual > vGanador) {
+        // Triunfo gana siempre
+        if (carta.palo === triunfo && cartaGanadora.palo !== triunfo) {
             ganadora = jugada;
+            return;
+        }
+
+        if (carta.palo === cartaGanadora.palo) {
+            const v1 = ORDEN_VALORES.indexOf(carta.valor);
+            const v2 = ORDEN_VALORES.indexOf(cartaGanadora.valor);
+            if (v1 > v2) ganadora = jugada;
         }
     });
 
     jugadores[ganadora.jugador].bazas.push([...bazaActual]);
+    bazasJugadas++;
 
     turnoActual = ganadora.jugador;
     bazaActual = [];
     esperandoAutomatico = false;
 
+    if (bazasJugadas === 10) {
+        manoTerminada = true;
+    }
+
     render();
+}
+
+// ==============================
+// RENDER GENERAL
+// ==============================
+
+function render() {
+    renderMesaJugador();
+    renderRivales();
+    renderBaza();
+    renderTurno();
+    renderTriunfo();
+    renderFinDeMano();
+
+    if (
+        !manoTerminada &&
+        turnoActual !== 0 &&
+        bazaActual.length < 4 &&
+        !esperandoAutomatico
+    ) {
+        esperandoAutomatico = true;
+        setTimeout(jugarAutomatico, 600);
+    }
 }
 
 // ==============================
@@ -216,15 +250,14 @@ function renderMesaJugador() {
 
     jugadores[0].mano.forEach((carta, index) => {
         const div = crearCartaDiv(carta);
-
         const esLegal = legales.includes(carta);
-        div.style.opacity = esLegal ? "1" : "0.4";
 
+        div.style.opacity = esLegal ? "1" : "0.4";
         div.style.marginLeft = index === 0 ? "0px" : "-120px";
         div.style.zIndex = index;
         div.style.transition = "transform 0.15s ease";
 
-        if (esLegal) {
+        if (esLegal && !manoTerminada) {
             div.addEventListener("mouseenter", () => {
                 div.style.transform = "translateY(-40px)";
                 div.style.zIndex = 1000;
@@ -243,6 +276,41 @@ function renderMesaJugador() {
 
         mesa.appendChild(div);
     });
+}
+
+// ==============================
+// TRIUNFO VISIBLE
+// ==============================
+
+function renderTriunfo() {
+    let div = document.getElementById("triunfo");
+    if (!div) {
+        div = document.createElement("div");
+        div.id = "triunfo";
+        div.style.color = "white";
+        div.style.textAlign = "center";
+        div.style.marginTop = "5px";
+        document.body.appendChild(div);
+    }
+    div.textContent = "Triunfo: " + triunfo;
+}
+
+// ==============================
+// FIN DE MANO
+// ==============================
+
+function renderFinDeMano() {
+    let div = document.getElementById("fin-mano");
+    if (!div) {
+        div = document.createElement("div");
+        div.id = "fin-mano";
+        div.style.color = "white";
+        div.style.textAlign = "center";
+        div.style.fontSize = "20px";
+        div.style.marginTop = "10px";
+        document.body.appendChild(div);
+    }
+    div.textContent = manoTerminada ? "Fin de la mano" : "";
 }
 
 // ==============================
@@ -361,7 +429,5 @@ function crearDorsoDiv() {
 // ==============================
 
 document.addEventListener("DOMContentLoaded", () => {
-    document
-        .getElementById("btnRepartir")
-        .addEventListener("click", repartir);
+    document.getElementById("btnRepartir").addEventListener("click", repartir);
 });
