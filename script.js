@@ -99,7 +99,6 @@ function render() {
     renderBaza();
     renderTurno();
 
-    // 🔑 aquí decidimos si toca automático
     if (turnoActual !== 0 && bazaActual.length < 4 && !esperandoAutomatico) {
         esperandoAutomatico = true;
         setTimeout(jugarAutomatico, 600);
@@ -107,7 +106,49 @@ function render() {
 }
 
 // ==============================
-// MANO JUGADOR 0
+// JUGAR CARTA
+// ==============================
+
+function jugarCarta(idJugador, indice) {
+    const carta = jugadores[idJugador].mano.splice(indice, 1)[0];
+    bazaActual.push({ jugador: idJugador, carta });
+
+    // ¿Baza completa?
+    if (bazaActual.length === 4) {
+        setTimeout(cerrarBaza, 800);
+        return;
+    }
+
+    turnoActual = (turnoActual + 1) % 4;
+    esperandoAutomatico = false;
+    render();
+}
+
+// ==============================
+// CERRAR BAZA (CLAVE)
+// ==============================
+
+function cerrarBaza() {
+    // (De momento no calculamos ganador)
+    bazaActual = [];
+    turnoActual = 0;
+    esperandoAutomatico = false;
+    render();
+}
+
+// ==============================
+// JUGADOR AUTOMÁTICO
+// ==============================
+
+function jugarAutomatico() {
+    if (turnoActual === 0) return;
+    const jugador = jugadores[turnoActual];
+    if (!jugador || jugador.mano.length === 0) return;
+    jugarCarta(turnoActual, 0);
+}
+
+// ==============================
+// RENDER MANO JUGADOR
 // ==============================
 
 function renderMesaJugador() {
@@ -143,33 +184,6 @@ function renderMesaJugador() {
 
         mesa.appendChild(div);
     });
-}
-
-// ==============================
-// JUGAR CARTA
-// ==============================
-
-function jugarCarta(idJugador, indice) {
-    const carta = jugadores[idJugador].mano.splice(indice, 1)[0];
-    bazaActual.push({ jugador: idJugador, carta });
-
-    turnoActual = (turnoActual + 1) % 4;
-    esperandoAutomatico = false;
-
-    render();
-}
-
-// ==============================
-// JUGADOR AUTOMÁTICO
-// ==============================
-
-function jugarAutomatico() {
-    if (turnoActual === 0) return;
-
-    const jugador = jugadores[turnoActual];
-    if (!jugador || jugador.mano.length === 0) return;
-
-    jugarCarta(turnoActual, 0);
 }
 
 // ==============================
