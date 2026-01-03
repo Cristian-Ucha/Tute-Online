@@ -7,6 +7,12 @@ alert("script.js cargado");
 const ANCHO_CARTA = 208;
 const ALTO_CARTA = 319;
 
+// Posición del dorso en el sprite
+const DORSO = {
+    fila: 4,
+    columna: 1
+};
+
 // ==============================
 // ESTADO DEL JUEGO
 // ==============================
@@ -59,17 +65,12 @@ function crearBaraja() {
 }
 
 // ==============================
-// REPARTO A 4 JUGADORES
+// REPARTO
 // ==============================
 
 function repartir() {
     document.body.style.backgroundColor = "#0b5c3b";
     document.body.style.margin = "0";
-
-    const mesa = document.getElementById("mesa");
-    const baza = document.getElementById("baza");
-    mesa.innerHTML = "";
-    baza.innerHTML = "";
 
     jugadores = [
         { id: 0, mano: [], bazas: [] },
@@ -80,11 +81,8 @@ function repartir() {
 
     const baraja = crearBaraja().sort(() => Math.random() - 0.5);
 
-    // Reparto real: 10 cartas por jugador
     for (let i = 0; i < 10; i++) {
-        jugadores.forEach(jugador => {
-            jugador.mano.push(baraja.pop());
-        });
+        jugadores.forEach(j => j.mano.push(baraja.pop()));
     }
 
     turnoActual = 0;
@@ -98,16 +96,17 @@ function repartir() {
 // ==============================
 
 function render() {
-    renderManoJugador();
+    renderMesaJugador();
+    renderRivales();
     renderBaza();
     renderTurno();
 }
 
 // ==============================
-// MANO DEL JUGADOR 0 (HUMANO)
+// MANO JUGADOR 0
 // ==============================
 
-function renderManoJugador() {
+function renderMesaJugador() {
     const mesa = document.getElementById("mesa");
     mesa.innerHTML = "";
 
@@ -116,16 +115,13 @@ function renderManoJugador() {
     mesa.style.alignItems = "flex-end";
     mesa.style.padding = "20px";
 
-    const mano = jugadores[0].mano;
-
-    mano.forEach((carta, index) => {
+    jugadores[0].mano.forEach((carta, index) => {
         const div = crearCartaDiv(carta);
 
         div.style.marginLeft = index === 0 ? "0px" : "-120px";
         div.style.zIndex = index;
         div.style.transition = "transform 0.15s ease";
 
-        // Hover
         div.addEventListener("mouseenter", () => {
             div.style.transform = "translateY(-40px)";
             div.style.zIndex = 1000;
@@ -136,13 +132,61 @@ function renderManoJugador() {
             div.style.zIndex = index;
         });
 
-        // Solo se puede jugar si es tu turno
         div.addEventListener("click", () => {
             if (turnoActual !== 0) return;
             jugarCarta(0, index);
         });
 
         mesa.appendChild(div);
+    });
+}
+
+// ==============================
+// RIVALES (DORSOS)
+// ==============================
+
+function renderRivales() {
+    renderRival(1, "arriba");
+    renderRival(2, "izquierda");
+    renderRival(3, "derecha");
+}
+
+function renderRival(id, posicion) {
+    let cont = document.getElementById("rival-" + id);
+    if (!cont) {
+        cont = document.createElement("div");
+        cont.id = "rival-" + id;
+        cont.style.position = "absolute";
+        document.body.appendChild(cont);
+    }
+
+    // Posiciones visuales simples
+    if (posicion === "arriba") {
+        cont.style.top = "20px";
+        cont.style.left = "50%";
+        cont.style.transform = "translateX(-50%)";
+        cont.style.display = "flex";
+    }
+    if (posicion === "izquierda") {
+        cont.style.left = "20px";
+        cont.style.top = "50%";
+        cont.style.transform = "translateY(-50%)";
+        cont.style.display = "flex";
+        cont.style.flexDirection = "column";
+    }
+    if (posicion === "derecha") {
+        cont.style.right = "20px";
+        cont.style.top = "50%";
+        cont.style.transform = "translateY(-50%)";
+        cont.style.display = "flex";
+        cont.style.flexDirection = "column";
+    }
+
+    cont.innerHTML = "";
+
+    jugadores[id].mano.forEach(() => {
+        const dorso = crearDorsoDiv();
+        cont.appendChild(dorso);
     });
 }
 
@@ -156,7 +200,7 @@ function renderBaza() {
 
     baza.style.display = "flex";
     baza.style.justifyContent = "center";
-    baza.style.marginTop = "30px";
+    baza.style.marginTop = "20px";
 
     bazaActual.forEach(jugada => {
         const div = crearCartaDiv(jugada.carta);
@@ -171,16 +215,13 @@ function renderBaza() {
 
 function renderTurno() {
     let info = document.getElementById("turno");
-
     if (!info) {
         info = document.createElement("div");
         info.id = "turno";
         info.style.color = "white";
         info.style.textAlign = "center";
-        info.style.marginTop = "10px";
         document.body.appendChild(info);
     }
-
     info.textContent = "Turno del jugador " + turnoActual;
 }
 
@@ -188,23 +229,17 @@ function renderTurno() {
 // JUGAR CARTA
 // ==============================
 
-function jugarCarta(idJugador, indiceCarta) {
-    const jugador = jugadores[idJugador];
-    const carta = jugador.mano.splice(indiceCarta, 1)[0];
+function jugarCarta(idJugador, indice) {
+    const carta = jugadores[idJugador].mano.splice(indice, 1)[0];
+    bazaActual.push({ jugador: idJugador, carta });
 
-    bazaActual.push({
-        jugador: idJugador,
-        carta: carta
-    });
-
-    // Avanzar turno
     turnoActual = (turnoActual + 1) % 4;
 
     render();
 }
 
 // ==============================
-// CARTA VISUAL
+// CARTA / DORSO
 // ==============================
 
 function crearCartaDiv(carta) {
@@ -216,6 +251,20 @@ function crearCartaDiv(carta) {
 
     const x = carta.columna * ANCHO_CARTA;
     const y = carta.fila * ALTO_CARTA;
+    div.style.backgroundPosition = `-${x}px -${y}px`;
+
+    return div;
+}
+
+function crearDorsoDiv() {
+    const div = document.createElement("div");
+    div.style.width = ANCHO_CARTA + "px";
+    div.style.height = ALTO_CARTA + "px";
+    div.style.backgroundImage = "url('cartas/baraja.png')";
+    div.style.backgroundRepeat = "no-repeat";
+
+    const x = DORSO.columna * ANCHO_CARTA;
+    const y = DORSO.fila * ALTO_CARTA;
     div.style.backgroundPosition = `-${x}px -${y}px`;
 
     return div;
