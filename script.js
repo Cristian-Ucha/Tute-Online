@@ -7,11 +7,16 @@ alert("script.js cargado");
 const ANCHO_CARTA = 208;
 const ALTO_CARTA = 319;
 
-let manoJugador = [];
+// ==============================
+// ESTADO DEL JUEGO
+// ==============================
+
+let jugadores = [];
+let turnoActual = 0;
 let bazaActual = [];
 
 // ==============================
-// DATOS DEL JUEGO
+// DATOS DEL TUTE
 // ==============================
 
 const PALOS = [
@@ -54,74 +59,73 @@ function crearBaraja() {
 }
 
 // ==============================
-// PUNTOS
-// ==============================
-
-function puntosCarta(valor) {
-    switch (valor) {
-        case "as": return 11;
-        case "tres": return 10;
-        case "rey": return 4;
-        case "caballo": return 3;
-        case "sota": return 2;
-        default: return 0;
-    }
-}
-
-function puntosMano(mano) {
-    return mano.reduce((total, carta) => total + puntosCarta(carta.valor), 0);
-}
-
-// ==============================
-// REPARTIR
+// REPARTO A 4 JUGADORES
 // ==============================
 
 function repartir() {
-    const mesa = document.getElementById("mesa");
-    const baza = document.getElementById("baza");
-
     document.body.style.backgroundColor = "#0b5c3b";
     document.body.style.margin = "0";
 
-    document.getElementById("titulo").style.color = "white";
-    document.getElementById("titulo").style.textAlign = "center";
-
+    const mesa = document.getElementById("mesa");
+    const baza = document.getElementById("baza");
     mesa.innerHTML = "";
     baza.innerHTML = "";
+
+    jugadores = [
+        { id: 0, mano: [], bazas: [] },
+        { id: 1, mano: [], bazas: [] },
+        { id: 2, mano: [], bazas: [] },
+        { id: 3, mano: [], bazas: [] }
+    ];
+
+    const baraja = crearBaraja().sort(() => Math.random() - 0.5);
+
+    // Reparto real: 10 cartas por jugador
+    for (let i = 0; i < 10; i++) {
+        jugadores.forEach(jugador => {
+            jugador.mano.push(baraja.pop());
+        });
+    }
+
+    turnoActual = 0;
+    bazaActual = [];
+
+    render();
+}
+
+// ==============================
+// RENDER GENERAL
+// ==============================
+
+function render() {
+    renderManoJugador();
+    renderBaza();
+    renderTurno();
+}
+
+// ==============================
+// MANO DEL JUGADOR 0 (HUMANO)
+// ==============================
+
+function renderManoJugador() {
+    const mesa = document.getElementById("mesa");
+    mesa.innerHTML = "";
 
     mesa.style.display = "flex";
     mesa.style.justifyContent = "center";
     mesa.style.alignItems = "flex-end";
     mesa.style.padding = "20px";
 
-    baza.style.display = "flex";
-    baza.style.justifyContent = "center";
-    baza.style.marginTop = "30px";
+    const mano = jugadores[0].mano;
 
-    const baraja = crearBaraja().sort(() => Math.random() - 0.5);
-
-    manoJugador = baraja.slice(0, 10);
-    bazaActual = [];
-
-    renderMano();
-    mostrarPuntuacion();
-}
-
-// ==============================
-// MANO
-// ==============================
-
-function renderMano() {
-    const mesa = document.getElementById("mesa");
-    mesa.innerHTML = "";
-
-    manoJugador.forEach((carta, index) => {
+    mano.forEach((carta, index) => {
         const div = crearCartaDiv(carta);
 
         div.style.marginLeft = index === 0 ? "0px" : "-120px";
         div.style.zIndex = index;
         div.style.transition = "transform 0.15s ease";
 
+        // Hover
         div.addEventListener("mouseenter", () => {
             div.style.transform = "translateY(-40px)";
             div.style.zIndex = 1000;
@@ -132,25 +136,14 @@ function renderMano() {
             div.style.zIndex = index;
         });
 
+        // Solo se puede jugar si es tu turno
         div.addEventListener("click", () => {
-            jugarCarta(index);
+            if (turnoActual !== 0) return;
+            jugarCarta(0, index);
         });
 
         mesa.appendChild(div);
     });
-}
-
-// ==============================
-// JUGAR CARTA
-// ==============================
-
-function jugarCarta(indice) {
-    const carta = manoJugador.splice(indice, 1)[0];
-    bazaActual.push(carta);
-
-    renderMano();
-    renderBaza();
-    mostrarPuntuacion();
 }
 
 // ==============================
@@ -161,11 +154,53 @@ function renderBaza() {
     const baza = document.getElementById("baza");
     baza.innerHTML = "";
 
-    bazaActual.forEach(carta => {
-        const div = crearCartaDiv(carta);
+    baza.style.display = "flex";
+    baza.style.justifyContent = "center";
+    baza.style.marginTop = "30px";
+
+    bazaActual.forEach(jugada => {
+        const div = crearCartaDiv(jugada.carta);
         div.style.margin = "0 10px";
         baza.appendChild(div);
     });
+}
+
+// ==============================
+// TURNO
+// ==============================
+
+function renderTurno() {
+    let info = document.getElementById("turno");
+
+    if (!info) {
+        info = document.createElement("div");
+        info.id = "turno";
+        info.style.color = "white";
+        info.style.textAlign = "center";
+        info.style.marginTop = "10px";
+        document.body.appendChild(info);
+    }
+
+    info.textContent = "Turno del jugador " + turnoActual;
+}
+
+// ==============================
+// JUGAR CARTA
+// ==============================
+
+function jugarCarta(idJugador, indiceCarta) {
+    const jugador = jugadores[idJugador];
+    const carta = jugador.mano.splice(indiceCarta, 1)[0];
+
+    bazaActual.push({
+        jugador: idJugador,
+        carta: carta
+    });
+
+    // Avanzar turno
+    turnoActual = (turnoActual + 1) % 4;
+
+    render();
 }
 
 // ==============================
@@ -174,7 +209,6 @@ function renderBaza() {
 
 function crearCartaDiv(carta) {
     const div = document.createElement("div");
-
     div.style.width = ANCHO_CARTA + "px";
     div.style.height = ALTO_CARTA + "px";
     div.style.backgroundImage = "url('cartas/baraja.png')";
@@ -185,25 +219,6 @@ function crearCartaDiv(carta) {
     div.style.backgroundPosition = `-${x}px -${y}px`;
 
     return div;
-}
-
-// ==============================
-// PUNTUACIÓN VISUAL
-// ==============================
-
-function mostrarPuntuacion() {
-    let info = document.getElementById("puntuacion");
-
-    if (!info) {
-        info = document.createElement("div");
-        info.id = "puntuacion";
-        info.style.color = "white";
-        info.style.textAlign = "center";
-        info.style.marginTop = "10px";
-        document.body.appendChild(info);
-    }
-
-    info.textContent = "Puntos de la mano: " + puntosMano(manoJugador);
 }
 
 // ==============================
