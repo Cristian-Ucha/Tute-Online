@@ -7,7 +7,6 @@ alert("script.js cargado");
 const ANCHO_CARTA = 208;
 const ALTO_CARTA = 319;
 
-// Posición del dorso en el sprite
 const DORSO = {
     fila: 4,
     columna: 1
@@ -160,7 +159,6 @@ function renderRival(id, posicion) {
         document.body.appendChild(cont);
     }
 
-    // Posiciones visuales simples
     if (posicion === "arriba") {
         cont.style.top = "20px";
         cont.style.left = "50%";
@@ -185,8 +183,7 @@ function renderRival(id, posicion) {
     cont.innerHTML = "";
 
     jugadores[id].mano.forEach(() => {
-        const dorso = crearDorsoDiv();
-        cont.appendChild(dorso);
+        cont.appendChild(crearDorsoDiv());
     });
 }
 
@@ -226,7 +223,7 @@ function renderTurno() {
 }
 
 // ==============================
-// JUGAR CARTA
+// JUGAR CARTA (CLAVE)
 // ==============================
 
 function jugarCarta(idJugador, indice) {
@@ -236,6 +233,24 @@ function jugarCarta(idJugador, indice) {
     turnoActual = (turnoActual + 1) % 4;
 
     render();
+
+    // 🔑 JUEGO AUTOMÁTICO
+    if (turnoActual !== 0 && bazaActual.length < 4) {
+        setTimeout(jugarAutomatico, 500);
+    }
+}
+
+// ==============================
+// JUGADOR AUTOMÁTICO
+// ==============================
+
+function jugarAutomatico() {
+    const jugador = jugadores[turnoActual];
+
+    if (!jugador || jugador.mano.length === 0) return;
+
+    // Juega la primera carta (stub)
+    jugarCarta(turnoActual, 0);
 }
 
 // ==============================
@@ -265,17 +280,4 @@ function crearDorsoDiv() {
 
     const x = DORSO.columna * ANCHO_CARTA;
     const y = DORSO.fila * ALTO_CARTA;
-    div.style.backgroundPosition = `-${x}px -${y}px`;
-
-    return div;
-}
-
-// ==============================
-// BOTÓN
-// ==============================
-
-document.addEventListener("DOMContentLoaded", () => {
-    document
-        .getElementById("btnRepartir")
-        .addEventListener("click", repartir);
-});
+    div.st
