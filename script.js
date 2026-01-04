@@ -24,7 +24,8 @@ let bazasJugadas = 0;
 let manoTerminada = false;
 let puntosPareja = [0, 0];
 
-let esperandoIA = false; // 🔴 control estricto
+let esperandoIA = false;
+let inicioDeMano = true; // 🔴 NUEVO: controla la salida real
 
 // ==============================
 // DATOS DEL TUTE
@@ -82,7 +83,6 @@ function repartir() {
     jugadores = ASIENTOS.map(a => ({ asiento: a, mano: [] }));
     const baraja = crearBaraja().sort(() => Math.random() - 0.5);
 
-    // 🔴 repartidor aleatorio solo la primera vez
     if (asientoQueDa === null) {
         asientoQueDa = Math.floor(Math.random() * 4);
     }
@@ -91,13 +91,12 @@ function repartir() {
         jugadores.forEach(j => j.mano.push(baraja.pop()));
     }
 
-    // 🔴 triunfo desde la mano del que da
     const mano = jugadores[asientoQueDa].mano;
     cartaTriunfo = mano[Math.floor(Math.random() * mano.length)];
     triunfo = cartaTriunfo.palo;
 
-    // 🔴 empieza el siguiente al que da
-    turnoActual = (asientoQueDa + 1) % 4;
+    turnoActual = (asientoQueDa + 1) % 4; // ✔ correcto
+    inicioDeMano = true;                  // 🔴 clave
 
     bazaActual = [];
     bazasJugadas = 0;
@@ -139,6 +138,7 @@ function jugarCarta(asiento, index) {
 
     bazaActual.push({ asiento, carta });
     esperandoIA = false;
+    inicioDeMano = false; // 🔴 ya se ha salido
 
     if (bazaActual.length === 4) {
         setTimeout(resolverBaza, 1200);
@@ -150,7 +150,7 @@ function jugarCarta(asiento, index) {
 }
 
 // ==============================
-// IA (CORRECTA)
+// IA (CORREGIDA)
 // ==============================
 
 function jugarAutomatico() {
@@ -158,6 +158,9 @@ function jugarAutomatico() {
     if (turnoActual === 0) return;
     if (esperandoIA) return;
     if (bazaActual.length === 4) return;
+
+    // 🔴 NO ejecutar IA automáticamente al inicio de mano
+    if (inicioDeMano) return;
 
     esperandoIA = true;
 
@@ -204,6 +207,7 @@ function resolverBaza() {
         manoTerminada = true;
     }
 
+    inicioDeMano = true; // 🔴 nueva baza → nueva salida
     render();
 }
 
@@ -234,7 +238,7 @@ function render() {
 }
 
 // ==============================
-// RENDER MESA (🔴 ASISTIR)
+// RENDER MESA (Z-INDEX FIJO)
 // ==============================
 
 function renderMesa() {
@@ -248,6 +252,7 @@ function renderMesa() {
         const d = crearCarta(c);
         d.classList.add("carta");
 
+        d.style.zIndex = i; // 🔴 CLAVE
         const esLegal = legales.includes(c);
         d.style.opacity = esLegal ? "1" : "0.4";
 
@@ -260,7 +265,7 @@ function renderMesa() {
 }
 
 // ==============================
-// RESTO DE RENDERS
+// RESTO DE RENDER
 // ==============================
 
 function renderBaza() {
