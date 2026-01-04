@@ -9,6 +9,22 @@ const ALTO_CARTA = 319;
 const DORSO = { fila: 4, columna: 1 };
 
 // ==============================
+// MODELO DE MESA (NUEVO)
+// ==============================
+
+// Asientos fijos en la mesa: 0,1,2,3
+// El motor SIEMPRE trabaja con asientos, no con personas reales
+const ASIENTOS = [0, 1, 2, 3];
+
+// Parejas por asiento (regla fija del Tute)
+const PAREJAS_POR_ASIENTO = {
+    0: 0, // asiento 0 → pareja 0
+    2: 0, // asiento 2 → pareja 0
+    1: 1, // asiento 1 → pareja 1
+    3: 1  // asiento 3 → pareja 1
+};
+
+// ==============================
 // ESTADO DEL JUEGO
 // ==============================
 
@@ -20,7 +36,7 @@ let esperandoAutomatico = false;
 let triunfo = null;
 let cartaTriunfo = null;
 
-let jugadorQueDa = null;
+let asientoQueDa = null; // antes jugadorQueDa
 
 let bazasJugadas = 0;
 let manoTerminada = false;
@@ -82,39 +98,38 @@ function crearBaraja() {
 }
 
 // ==============================
-// REPARTO + JUGADOR QUE DA + TRIUNFO
+// REPARTO + TRIUNFO
 // ==============================
 
 function repartir() {
     document.body.style.backgroundColor = "#0b5c3b";
     document.body.style.margin = "0";
 
-    jugadores = [
-        { id: 0, mano: [], bazas: [] },
-        { id: 1, mano: [], bazas: [] },
-        { id: 2, mano: [], bazas: [] },
-        { id: 3, mano: [], bazas: [] }
-    ];
+    jugadores = ASIENTOS.map(asiento => ({
+        asiento,
+        mano: [],
+        bazas: []
+    }));
 
     const baraja = crearBaraja().sort(() => Math.random() - 0.5);
 
-    // 👉 Elegimos jugador que da SOLO si es la primera mano
-    if (jugadorQueDa === null) {
-        jugadorQueDa = Math.floor(Math.random() * 4);
+    // Elegir asiento que da SOLO la primera mano
+    if (asientoQueDa === null) {
+        asientoQueDa = Math.floor(Math.random() * 4);
     }
 
-    // Reparto completo
+    // Reparto
     for (let i = 0; i < 10; i++) {
         jugadores.forEach(j => j.mano.push(baraja.pop()));
     }
 
-    // 👉 Carta de triunfo sacada de la MANO del jugador que da
-    const manoDelQueDa = jugadores[jugadorQueDa].mano;
+    // Triunfo: carta real de la mano del que da
+    const manoDelQueDa = jugadores[asientoQueDa].mano;
     cartaTriunfo = manoDelQueDa[Math.floor(Math.random() * manoDelQueDa.length)];
     triunfo = cartaTriunfo.palo;
 
-    // 👉 Sale el siguiente jugador
-    turnoActual = (jugadorQueDa + 1) % 4;
+    // Sale el siguiente asiento
+    turnoActual = (asientoQueDa + 1) % 4;
 
     bazaActual = [];
     esperandoAutomatico = false;
@@ -125,7 +140,7 @@ function repartir() {
 }
 
 // ==============================
-// CARTAS LEGALES (ASISTIR + TRIUNFO)
+// CARTAS LEGALES
 // ==============================
 
 function cartasLegales(jugador) {
@@ -146,13 +161,13 @@ function cartasLegales(jugador) {
 // JUGAR CARTA
 // ==============================
 
-function jugarCarta(idJugador, indiceReal) {
+function jugarCarta(asiento, indiceReal) {
     if (manoTerminada) return;
 
-    const jugador = jugadores[idJugador];
+    const jugador = jugadores[asiento];
     const carta = jugador.mano.splice(indiceReal, 1)[0];
 
-    bazaActual.push({ jugador: idJugador, carta });
+    bazaActual.push({ asiento, carta });
 
     if (bazaActual.length === 4) {
         render();
@@ -184,7 +199,7 @@ function jugarAutomatico() {
 }
 
 // ==============================
-// RESOLVER BAZA (CON TRIUNFO)
+// RESOLVER BAZA
 // ==============================
 
 function resolverBaza() {
@@ -206,10 +221,10 @@ function resolverBaza() {
         }
     });
 
-    jugadores[ganadora.jugador].bazas.push([...bazaActual]);
+    jugadores[ganadora.asiento].bazas.push([...bazaActual]);
     bazasJugadas++;
 
-    turnoActual = ganadora.jugador;
+    turnoActual = ganadora.asiento;
     bazaActual = [];
     esperandoAutomatico = false;
 
@@ -244,7 +259,7 @@ function render() {
 }
 
 // ==============================
-// MANO JUGADOR HUMANO
+// RENDER JUGADOR HUMANO (ASIENTO 0)
 // ==============================
 
 function renderMesaJugador() {
@@ -256,9 +271,10 @@ function renderMesaJugador() {
     mesa.style.alignItems = "flex-end";
     mesa.style.padding = "20px";
 
-    const legales = cartasLegales(jugadores[0]);
+    const jugador = jugadores[0];
+    const legales = cartasLegales(jugador);
 
-    jugadores[0].mano.forEach((carta, index) => {
+    jugador.mano.forEach((carta, index) => {
         const div = crearCartaDiv(carta);
         const esLegal = legales.includes(carta);
 
@@ -268,20 +284,18 @@ function renderMesaJugador() {
         div.style.transition = "transform 0.15s ease";
 
         if (esLegal && !manoTerminada) {
-            div.addEventListener("mouseenter", () => {
+            div.onmouseenter = () => {
                 div.style.transform = "translateY(-40px)";
                 div.style.zIndex = 1000;
-            });
-
-            div.addEventListener("mouseleave", () => {
+            };
+            div.onmouseleave = () => {
                 div.style.transform = "translateY(0)";
                 div.style.zIndex = index;
-            });
-
-            div.addEventListener("click", () => {
+            };
+            div.onclick = () => {
                 if (turnoActual !== 0) return;
                 jugarCarta(0, index);
-            });
+            };
         }
 
         mesa.appendChild(div);
@@ -289,7 +303,7 @@ function renderMesaJugador() {
 }
 
 // ==============================
-// TRIUNFO VISIBLE (CARTA REAL)
+// TRIUNFO
 // ==============================
 
 function renderTriunfo() {
@@ -332,7 +346,7 @@ function renderFinDeMano() {
 }
 
 // ==============================
-// RIVALES
+// RIVALES (ASIENTOS 1,2,3)
 // ==============================
 
 function renderRivales() {
@@ -341,11 +355,11 @@ function renderRivales() {
     renderRival(3, "derecha");
 }
 
-function renderRival(id, posicion) {
-    let cont = document.getElementById("rival-" + id);
+function renderRival(asiento, posicion) {
+    let cont = document.getElementById("rival-" + asiento);
     if (!cont) {
         cont = document.createElement("div");
-        cont.id = "rival-" + id;
+        cont.id = "rival-" + asiento;
         cont.style.position = "absolute";
         document.body.appendChild(cont);
     }
@@ -372,7 +386,7 @@ function renderRival(id, posicion) {
     }
 
     cont.innerHTML = "";
-    jugadores[id].mano.forEach(() => cont.appendChild(crearDorsoDiv()));
+    jugadores[asiento].mano.forEach(() => cont.appendChild(crearDorsoDiv()));
 }
 
 // ==============================
@@ -407,7 +421,7 @@ function renderTurno() {
         info.style.textAlign = "center";
         document.body.appendChild(info);
     }
-    info.textContent = "Turno del jugador " + turnoActual;
+    info.textContent = "Turno del asiento " + turnoActual;
 }
 
 // ==============================
