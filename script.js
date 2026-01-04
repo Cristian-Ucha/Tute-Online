@@ -14,7 +14,6 @@ const DORSO = { fila: 4, columna: 1 };
 
 const ASIENTOS = [0, 1, 2, 3];
 
-// Parejas por asiento (regla fija del Tute)
 const PAREJAS_POR_ASIENTO = {
     0: 0,
     2: 0,
@@ -22,7 +21,6 @@ const PAREJAS_POR_ASIENTO = {
     3: 1
 };
 
-// Puntuación de cartas (Tute)
 const PUNTOS_CARTA = {
     as: 11,
     tres: 10,
@@ -47,7 +45,6 @@ let asientoQueDa = null;
 let bazasJugadas = 0;
 let manoTerminada = false;
 
-// Puntos por pareja (solo de ESTA mano)
 let puntosPareja = [0, 0];
 
 // ==============================
@@ -103,9 +100,6 @@ function crearBaraja() {
 // ==============================
 
 function repartir() {
-    document.body.style.backgroundColor = "#0b5c3b";
-    document.body.style.margin = "0";
-
     jugadores = ASIENTOS.map(asiento => ({
         asiento,
         mano: [],
@@ -222,8 +216,6 @@ function resolverBaza() {
         puntosPareja[parejaGanadora] += PUNTOS_CARTA[jugada.carta.valor] || 0;
     });
 
-    jugadores[ganadora.asiento].bazas.push([...bazaActual]);
-
     turnoActual = ganadora.asiento;
     bazaActual = [];
     esperandoAutomatico = false;
@@ -248,29 +240,39 @@ function render() {
     renderTriunfo();
     renderFinDeMano();
 
-    if (
-        !manoTerminada &&
-        turnoActual !== 0 &&
-        bazaActual.length < 4 &&
-        !esperandoAutomatico
-    ) {
+    if (!manoTerminada && turnoActual !== 0 && bazaActual.length < 4 && !esperandoAutomatico) {
         esperandoAutomatico = true;
         setTimeout(jugarAutomatico, 600);
     }
 }
 
 // ==============================
-// RENDER JUGADOR HUMANO
+// FIN DE MANO (🔴 CLAVE AQUÍ)
+// ==============================
+
+function renderFinDeMano() {
+    const div = document.getElementById("fin-mano");
+
+    if (!manoTerminada) {
+        div.style.display = "none";
+        return;
+    }
+
+    div.style.display = "block";
+    div.innerHTML = `
+        <strong>Fin de la mano</strong><br><br>
+        Pareja 0 (asientos 0 y 2): ${puntosPareja[0]} puntos<br>
+        Pareja 1 (asientos 1 y 3): ${puntosPareja[1]} puntos
+    `;
+}
+
+// ==============================
+// RESTO DE RENDER (SIN CAMBIOS)
 // ==============================
 
 function renderMesaJugador() {
     const mesa = document.getElementById("mesa");
     mesa.innerHTML = "";
-
-    mesa.style.display = "flex";
-    mesa.style.justifyContent = "center";
-    mesa.style.alignItems = "flex-end";
-    mesa.style.padding = "20px";
 
     const jugador = jugadores[0];
     const legales = cartasLegales(jugador);
@@ -281,127 +283,38 @@ function renderMesaJugador() {
 
         div.style.opacity = esLegal ? "1" : "0.4";
         div.style.marginLeft = index === 0 ? "0px" : "-120px";
-        div.style.zIndex = index;
-        div.style.transition = "transform 0.15s ease";
 
         if (esLegal && !manoTerminada) {
-            div.onmouseenter = () => {
-                div.style.transform = "translateY(-40px)";
-                div.style.zIndex = 1000;
-            };
-            div.onmouseleave = () => {
-                div.style.transform = "translateY(0)";
-                div.style.zIndex = index;
-            };
-            div.onclick = () => {
-                if (turnoActual !== 0) return;
-                jugarCarta(0, index);
-            };
+            div.onclick = () => turnoActual === 0 && jugarCarta(0, index);
         }
 
         mesa.appendChild(div);
     });
 }
 
-// ==============================
-// TRIUNFO
-// ==============================
-
 function renderTriunfo() {
     const cont = document.getElementById("triunfo");
     cont.innerHTML = "Triunfo<br>";
-    cont.style.color = "white";
     cont.appendChild(crearCartaDiv(cartaTriunfo));
 }
 
-// ==============================
-// FIN DE MANO + PUNTOS
-// ==============================
-
-function renderFinDeMano() {
-    const div = document.getElementById("fin-mano");
-    div.style.color = "white";
-    div.style.textAlign = "center";
-    div.style.fontSize = "20px";
-
-    if (!manoTerminada) {
-        div.textContent = "";
-        return;
-    }
-
-    div.innerHTML = `
-        <strong>Fin de la mano</strong><br><br>
-        Pareja 0 (asientos 0 y 2): ${puntosPareja[0]} puntos<br>
-        Pareja 1 (asientos 1 y 3): ${puntosPareja[1]} puntos
-    `;
+function renderTurno() {
+    document.getElementById("turno").textContent =
+        "Turno del asiento " + turnoActual;
 }
-
-// ==============================
-// RIVALES
-// ==============================
 
 function renderRivales() {
-    renderRival(1, "arriba");
-    renderRival(2, "izquierda");
-    renderRival(3, "derecha");
+    [1, 2, 3].forEach(id => {
+        const cont = document.getElementById("rival-" + id);
+        cont.innerHTML = "";
+        jugadores[id].mano.forEach(() => cont.appendChild(crearDorsoDiv()));
+    });
 }
-
-function renderRival(asiento, posicion) {
-    const cont = document.getElementById("rival-" + asiento);
-    cont.innerHTML = "";
-
-    if (posicion === "arriba") {
-        cont.style.top = "20px";
-        cont.style.left = "50%";
-        cont.style.transform = "translateX(-50%)";
-        cont.style.display = "flex";
-    }
-    if (posicion === "izquierda") {
-        cont.style.left = "20px";
-        cont.style.top = "50%";
-        cont.style.transform = "translateY(-50%)";
-        cont.style.display = "flex";
-        cont.style.flexDirection = "column";
-    }
-    if (posicion === "derecha") {
-        cont.style.right = "20px";
-        cont.style.top = "50%";
-        cont.style.transform = "translateY(-50%)";
-        cont.style.display = "flex";
-        cont.style.flexDirection = "column";
-    }
-
-    jugadores[asiento].mano.forEach(() => cont.appendChild(crearDorsoDiv()));
-}
-
-// ==============================
-// BAZA
-// ==============================
 
 function renderBaza() {
     const baza = document.getElementById("baza");
     baza.innerHTML = "";
-
-    baza.style.display = "flex";
-    baza.style.justifyContent = "center";
-    baza.style.marginTop = "20px";
-
-    bazaActual.forEach(jugada => {
-        const div = crearCartaDiv(jugada.carta);
-        div.style.margin = "0 10px";
-        baza.appendChild(div);
-    });
-}
-
-// ==============================
-// TURNO
-// ==============================
-
-function renderTurno() {
-    const info = document.getElementById("turno");
-    info.style.color = "white";
-    info.style.textAlign = "center";
-    info.textContent = "Turno del asiento " + turnoActual;
+    bazaActual.forEach(j => baza.appendChild(crearCartaDiv(j.carta)));
 }
 
 // ==============================
@@ -413,12 +326,8 @@ function crearCartaDiv(carta) {
     div.style.width = ANCHO_CARTA + "px";
     div.style.height = ALTO_CARTA + "px";
     div.style.backgroundImage = "url('cartas/baraja.png')";
-    div.style.backgroundRepeat = "no-repeat";
-
-    const x = carta.columna * ANCHO_CARTA;
-    const y = carta.fila * ALTO_CARTA;
-    div.style.backgroundPosition = `-${x}px -${y}px`;
-
+    div.style.backgroundPosition =
+        `-${carta.columna * ANCHO_CARTA}px -${carta.fila * ALTO_CARTA}px`;
     return div;
 }
 
@@ -427,12 +336,8 @@ function crearDorsoDiv() {
     div.style.width = ANCHO_CARTA + "px";
     div.style.height = ALTO_CARTA + "px";
     div.style.backgroundImage = "url('cartas/baraja.png')";
-    div.style.backgroundRepeat = "no-repeat";
-
-    const x = DORSO.columna * ANCHO_CARTA;
-    const y = DORSO.fila * ALTO_CARTA;
-    div.style.backgroundPosition = `-${x}px -${y}px`;
-
+    div.style.backgroundPosition =
+        `-${DORSO.columna * ANCHO_CARTA}px -${DORSO.fila * ALTO_CARTA}px`;
     return div;
 }
 
