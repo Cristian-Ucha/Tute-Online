@@ -7,7 +7,7 @@ const ALTO_CARTA = 319;
 const DORSO = { fila: 4, columna: 1 };
 
 // ==============================
-// MODELO DE MESA
+// MODELO
 // ==============================
 
 const ASIENTOS = [0, 1, 2, 3];
@@ -22,7 +22,7 @@ const PUNTOS_CARTA = {
 };
 
 // ==============================
-// ESTADO DEL JUEGO
+// ESTADO
 // ==============================
 
 let jugadores = [];
@@ -38,9 +38,10 @@ let manoTerminada = false;
 let puntosPareja = [0, 0];
 
 let esperandoIA = false;
+let esperandoSalidaInicial = false; // 🔴 CLAVE
 
 // ==============================
-// DATOS DEL TUTE
+// DATOS TUTE
 // ==============================
 
 const PALOS = [
@@ -74,32 +75,27 @@ const VALORES = [
 
 function crearBaraja() {
     const baraja = [];
-    PALOS.forEach(palo => {
-        VALORES.forEach(valor => {
+    PALOS.forEach(p =>
+        VALORES.forEach(v =>
             baraja.push({
-                palo: palo.nombre,
-                valor: valor.nombre,
-                fila: palo.fila,
-                columna: valor.columna
-            });
-        });
-    });
+                palo: p.nombre,
+                valor: v.nombre,
+                fila: p.fila,
+                columna: v.columna
+            })
+        )
+    );
     return baraja;
 }
 
 // ==============================
-// REPARTO + TRIUNFO
+// REPARTO
 // ==============================
 
 function repartir() {
-    jugadores = ASIENTOS.map(a => ({
-        asiento: a,
-        mano: []
-    }));
-
+    jugadores = ASIENTOS.map(a => ({ asiento: a, mano: [] }));
     const baraja = crearBaraja().sort(() => Math.random() - 0.5);
 
-    // Repartidor aleatorio SOLO la primera mano
     if (asientoQueDa === null) {
         asientoQueDa = Math.floor(Math.random() * 4);
     }
@@ -108,26 +104,27 @@ function repartir() {
         jugadores.forEach(j => j.mano.push(baraja.pop()));
     }
 
-    // Triunfo desde la mano del que da
     const mano = jugadores[asientoQueDa].mano;
     cartaTriunfo = mano[Math.floor(Math.random() * mano.length)];
     triunfo = cartaTriunfo.palo;
 
-    // Empieza el siguiente al que da
+    // 🔴 sale el siguiente al que da
     turnoActual = (asientoQueDa + 1) % 4;
 
     bazaActual = [];
     bazasJugadas = 0;
     manoTerminada = false;
     puntosPareja = [0, 0];
+
     esperandoIA = false;
+    esperandoSalidaInicial = true; // 🔴 clave
 
     document.getElementById("fin-mano").style.display = "none";
     render();
 }
 
 // ==============================
-// CARTAS LEGALES (ASISTIR + TRIUNFO)
+// CARTAS LEGALES
 // ==============================
 
 function cartasLegales(jugador) {
@@ -136,10 +133,10 @@ function cartasLegales(jugador) {
     const paloSalida = bazaActual[0].carta.palo;
 
     const delPalo = jugador.mano.filter(c => c.palo === paloSalida);
-    if (delPalo.length > 0) return delPalo;
+    if (delPalo.length) return delPalo;
 
     const triunfos = jugador.mano.filter(c => c.palo === triunfo);
-    if (triunfos.length > 0) return triunfos;
+    if (triunfos.length) return triunfos;
 
     return jugador.mano;
 }
@@ -157,6 +154,9 @@ function jugarCarta(asiento, indice) {
     bazaActual.push({ asiento, carta });
     esperandoIA = false;
 
+    // 🔴 ya ha salido alguien
+    esperandoSalidaInicial = false;
+
     if (bazaActual.length === 4) {
         setTimeout(resolverBaza, 1200);
     } else {
@@ -167,7 +167,7 @@ function jugarCarta(asiento, indice) {
 }
 
 // ==============================
-// JUGADOR AUTOMÁTICO (IA)
+// IA
 // ==============================
 
 function jugarAutomatico() {
@@ -175,6 +175,16 @@ function jugarAutomatico() {
     if (turnoActual === 0) return;
     if (esperandoIA) return;
     if (bazaActual.length === 4) return;
+
+    // 🔴 espera visual al inicio de la mano
+    if (esperandoSalidaInicial) {
+        esperandoIA = true;
+        setTimeout(() => {
+            esperandoIA = false;
+            jugarAutomatico();
+        }, 600);
+        return;
+    }
 
     esperandoIA = true;
 
@@ -194,19 +204,17 @@ function jugarAutomatico() {
 function resolverBaza() {
     let ganadora = bazaActual[0];
 
-    bazaActual.forEach(jugada => {
-        const c = jugada.carta;
+    bazaActual.forEach(j => {
+        const c = j.carta;
         const g = ganadora.carta;
 
         if (c.palo === triunfo && g.palo !== triunfo) {
-            ganadora = jugada;
-            return;
-        }
-
-        if (c.palo === g.palo) {
-            const v1 = ORDEN_VALORES.indexOf(c.valor);
-            const v2 = ORDEN_VALORES.indexOf(g.valor);
-            if (v1 > v2) ganadora = jugada;
+            ganadora = j;
+        } else if (
+            c.palo === g.palo &&
+            ORDEN_VALORES.indexOf(c.valor) > ORDEN_VALORES.indexOf(g.valor)
+        ) {
+            ganadora = j;
         }
     });
 
@@ -223,11 +231,12 @@ function resolverBaza() {
         manoTerminada = true;
     }
 
+    esperandoSalidaInicial = true; // 🔴 nueva baza
     render();
 }
 
 // ==============================
-// RENDER GENERAL
+// RENDER
 // ==============================
 
 function render() {
@@ -312,7 +321,7 @@ function renderTriunfo() {
 }
 
 // ==============================
-// CARTAS (SPRITE)
+// CARTAS
 // ==============================
 
 function crearCartaDiv(carta) {
