@@ -1,7 +1,7 @@
-alert("script.js cargado");
+console.log("script.js cargado");
 
 // ==============================
-// CONFIGURACIÓN VISUAL
+// CONFIGURACIÓN
 // ==============================
 
 const ANCHO_CARTA = 208;
@@ -9,21 +9,7 @@ const ALTO_CARTA = 319;
 const DORSO = { fila: 4, columna: 1 };
 
 // ==============================
-// PAREJAS Y PUNTOS
-// ==============================
-
-const PAREJAS = { 0: 0, 1: 1, 2: 0, 3: 1 };
-
-const PUNTOS_CARTA = {
-    as: 11,
-    tres: 10,
-    rey: 4,
-    caballo: 3,
-    sota: 2
-};
-
-// ==============================
-// ESTADO GLOBAL
+// ESTADO DEL JUEGO
 // ==============================
 
 let jugadores = [];
@@ -33,14 +19,10 @@ let esperandoAutomatico = false;
 
 let jugadorQueDa = null;
 let cartaTriunfo = null;
-let triunfo = "";
-
-let bazasJugadas = 0;
-let manoTerminada = false;
-let puntosParejas = [0, 0];
+let triunfo = null;
 
 // ==============================
-// DATOS DE CARTAS
+// DATOS DEL TUTE
 // ==============================
 
 const PALOS = [
@@ -88,7 +70,7 @@ function crearBaraja() {
 }
 
 // ==============================
-// INICIO DE MANO
+// REPARTO + TRIUNFO
 // ==============================
 
 function repartir() {
@@ -96,16 +78,13 @@ function repartir() {
     document.body.style.margin = "0";
 
     jugadores = [
-        { id: 0, mano: [], bazas: [] },
-        { id: 1, mano: [], bazas: [] },
-        { id: 2, mano: [], bazas: [] },
-        { id: 3, mano: [], bazas: [] }
+        { id: 0, mano: [] },
+        { id: 1, mano: [] },
+        { id: 2, mano: [] },
+        { id: 3, mano: [] }
     ];
 
-    puntosParejas = [0, 0];
     bazaActual = [];
-    bazasJugadas = 0;
-    manoTerminada = false;
     esperandoAutomatico = false;
 
     if (jugadorQueDa === null) {
@@ -118,21 +97,18 @@ function repartir() {
         jugadores.forEach(j => j.mano.push(baraja.pop()));
     }
 
-    // 🔒 TRIUNFO SIEMPRE DESDE LA MANO DEL QUE DA
-    const mano = jugadores[jugadorQueDa].mano;
-    cartaTriunfo = mano[Math.floor(Math.random() * mano.length)];
+    // TRIUNFO REAL (DE LA MANO DEL QUE DA)
+    const manoQueDa = jugadores[jugadorQueDa].mano;
+    cartaTriunfo = manoQueDa[Math.floor(Math.random() * manoQueDa.length)];
     triunfo = cartaTriunfo.palo;
 
     turnoActual = (jugadorQueDa + 1) % 4;
-
-    console.log("Jugador que da:", jugadorQueDa);
-    console.log("Triunfo:", triunfo);
 
     render();
 }
 
 // ==============================
-// CARTAS LEGALES
+// CARTAS LEGALES (ASISTIR + TRIUNFO)
 // ==============================
 
 function cartasLegales(jugador) {
@@ -154,14 +130,18 @@ function cartasLegales(jugador) {
 // ==============================
 
 function jugarCarta(idJugador, indice) {
-    if (manoTerminada) return;
+    const jugador = jugadores[idJugador];
+    const carta = jugador.mano.splice(indice, 1)[0];
 
-    const carta = jugadores[idJugador].mano.splice(indice, 1)[0];
     bazaActual.push({ jugador: idJugador, carta });
 
     if (bazaActual.length === 4) {
         render();
-        setTimeout(resolverBaza, 1200);
+        setTimeout(() => {
+            bazaActual = [];
+            turnoActual = (turnoActual + 1) % 4;
+            render();
+        }, 1200);
         return;
     }
 
@@ -175,47 +155,16 @@ function jugarCarta(idJugador, indice) {
 // ==============================
 
 function jugarAutomatico() {
-    if (manoTerminada || turnoActual === 0) return;
+    if (turnoActual === 0) return;
 
     const jugador = jugadores[turnoActual];
+    if (!jugador || jugador.mano.length === 0) return;
+
     const legales = cartasLegales(jugador);
     const carta = legales[0];
+    const indice = jugador.mano.indexOf(carta);
 
-    jugarCarta(turnoActual, jugador.mano.indexOf(carta));
-}
-
-// ==============================
-// RESOLVER BAZA
-// ==============================
-
-function resolverBaza() {
-    let ganadora = bazaActual[0];
-
-    bazaActual.forEach(j => {
-        const c = j.carta;
-        const g = ganadora.carta;
-
-        if (c.palo === triunfo && g.palo !== triunfo) ganadora = j;
-        else if (
-            c.palo === g.palo &&
-            ORDEN_VALORES.indexOf(c.valor) > ORDEN_VALORES.indexOf(g.valor)
-        ) ganadora = j;
-    });
-
-    const pareja = PAREJAS[ganadora.jugador];
-
-    bazaActual.forEach(j => {
-        puntosParejas[pareja] += PUNTOS_CARTA[j.carta.valor] || 0;
-    });
-
-    turnoActual = ganadora.jugador;
-    bazaActual = [];
-    bazasJugadas++;
-
-    if (bazasJugadas === 10) manoTerminada = true;
-
-    esperandoAutomatico = false;
-    render();
+    jugarCarta(turnoActual, indice);
 }
 
 // ==============================
@@ -228,22 +177,21 @@ function render() {
     renderBaza();
     renderTurno();
     renderTriunfo();
-    renderPuntuacion();
-    renderFinMano();
 
-    if (!manoTerminada && turnoActual !== 0 && bazaActual.length < 4 && !esperandoAutomatico) {
+    if (turnoActual !== 0 && bazaActual.length < 4 && !esperandoAutomatico) {
         esperandoAutomatico = true;
         setTimeout(jugarAutomatico, 600);
     }
 }
 
 // ==============================
-// RENDER JUGADOR
+// MESA JUGADOR
 // ==============================
 
 function renderMesaJugador() {
     const mesa = document.getElementById("mesa");
     mesa.innerHTML = "";
+
     mesa.style.display = "flex";
     mesa.style.justifyContent = "center";
     mesa.style.alignItems = "flex-end";
@@ -251,18 +199,18 @@ function renderMesaJugador() {
 
     const legales = cartasLegales(jugadores[0]);
 
-    jugadores[0].mano.forEach((carta, i) => {
+    jugadores[0].mano.forEach((carta, index) => {
         const div = crearCartaDiv(carta);
-        const legal = legales.includes(carta);
+        const esLegal = legales.includes(carta);
 
-        div.style.opacity = legal ? "1" : "0.4";
-        div.style.marginLeft = i === 0 ? "0" : "-120px";
+        div.style.opacity = esLegal ? "1" : "0.4";
+        div.style.marginLeft = index === 0 ? "0px" : "-120px";
         div.style.transition = "transform 0.15s";
 
-        if (legal && !manoTerminada) {
+        if (esLegal) {
             div.onmouseenter = () => div.style.transform = "translateY(-40px)";
             div.onmouseleave = () => div.style.transform = "translateY(0)";
-            div.onclick = () => turnoActual === 0 && jugarCarta(0, i);
+            div.onclick = () => turnoActual === 0 && jugarCarta(0, index);
         }
 
         mesa.appendChild(div);
@@ -279,53 +227,62 @@ function renderRivales() {
     renderRival(3, "derecha");
 }
 
-function renderRival(id, pos) {
-    let div = document.getElementById("rival-" + id);
-    if (!div) {
-        div = document.createElement("div");
-        div.id = "rival-" + id;
-        div.style.position = "absolute";
-        document.body.appendChild(div);
+function renderRival(id, posicion) {
+    let cont = document.getElementById("rival-" + id);
+    if (!cont) {
+        cont = document.createElement("div");
+        cont.id = "rival-" + id;
+        cont.style.position = "absolute";
+        document.body.appendChild(cont);
     }
 
-    div.innerHTML = "";
+    cont.innerHTML = "";
 
-    if (pos === "arriba") {
-        div.style.top = "10px";
-        div.style.left = "50%";
-        div.style.transform = "translateX(-50%)";
-        div.style.display = "flex";
-    }
-    if (pos === "izquierda") {
-        div.style.left = "10px";
-        div.style.top = "50%";
-        div.style.transform = "translateY(-50%)";
-        div.style.display = "flex";
-        div.style.flexDirection = "column";
-    }
-    if (pos === "derecha") {
-        div.style.right = "10px";
-        div.style.top = "50%";
-        div.style.transform = "translateY(-50%)";
-        div.style.display = "flex";
-        div.style.flexDirection = "column";
+    if (posicion === "arriba") {
+        cont.style.top = "10px";
+        cont.style.left = "50%";
+        cont.style.transform = "translateX(-50%)";
+        cont.style.display = "flex";
     }
 
-    jugadores[id].mano.forEach(() => div.appendChild(crearDorsoDiv()));
+    if (posicion === "izquierda") {
+        cont.style.left = "10px";
+        cont.style.top = "50%";
+        cont.style.transform = "translateY(-50%)";
+        cont.style.display = "flex";
+        cont.style.flexDirection = "column";
+    }
+
+    if (posicion === "derecha") {
+        cont.style.right = "10px";
+        cont.style.top = "50%";
+        cont.style.transform = "translateY(-50%)";
+        cont.style.display = "flex";
+        cont.style.flexDirection = "column";
+    }
+
+    jugadores[id].mano.forEach(() => cont.appendChild(crearDorsoDiv()));
 }
 
 // ==============================
-// RENDER INFO
+// BAZA
 // ==============================
 
 function renderBaza() {
-    const div = document.getElementById("baza");
-    div.innerHTML = "";
-    div.style.display = "flex";
-    div.style.justifyContent = "center";
+    const baza = document.getElementById("baza");
+    baza.innerHTML = "";
+    baza.style.display = "flex";
+    baza.style.justifyContent = "center";
+    baza.style.marginTop = "20px";
 
-    bazaActual.forEach(j => div.appendChild(crearCartaDiv(j.carta)));
+    bazaActual.forEach(jugada => {
+        baza.appendChild(crearCartaDiv(jugada.carta));
+    });
 }
+
+// ==============================
+// INFO
+// ==============================
 
 function renderTurno() {
     const div = document.getElementById("turno");
@@ -338,43 +295,36 @@ function renderTriunfo() {
     div.appendChild(crearCartaDiv(cartaTriunfo));
 }
 
-function renderPuntuacion() {
-    const div = document.getElementById("puntuacion");
-    div.innerHTML = `
-        Pareja 0 (0–2): ${puntosParejas[0]} puntos<br>
-        Pareja 1 (1–3): ${puntosParejas[1]} puntos
-    `;
-}
-
-function renderFinMano() {
-    const div = document.getElementById("fin-mano");
-    div.textContent = manoTerminada ? "Fin de la mano" : "";
-}
-
 // ==============================
 // CARTAS
 // ==============================
 
 function crearCartaDiv(carta) {
-    const d = document.createElement("div");
-    d.style.width = ANCHO_CARTA + "px";
-    d.style.height = ALTO_CARTA + "px";
-    d.style.backgroundImage = "url('cartas/baraja.png')";
-    d.style.backgroundRepeat = "no-repeat";
-    d.style.backgroundPosition =
-        `-${carta.columna * ANCHO_CARTA}px -${carta.fila * ALTO_CARTA}px`;
-    return d;
+    const div = document.createElement("div");
+    div.style.width = ANCHO_CARTA + "px";
+    div.style.height = ALTO_CARTA + "px";
+    div.style.backgroundImage = "url('cartas/baraja.png')";
+    div.style.backgroundRepeat = "no-repeat";
+
+    const x = carta.columna * ANCHO_CARTA;
+    const y = carta.fila * ALTO_CARTA;
+    div.style.backgroundPosition = `-${x}px -${y}px`;
+
+    return div;
 }
 
 function crearDorsoDiv() {
-    const d = document.createElement("div");
-    d.style.width = ANCHO_CARTA + "px";
-    d.style.height = ALTO_CARTA + "px";
-    d.style.backgroundImage = "url('cartas/baraja.png')";
-    d.style.backgroundRepeat = "no-repeat";
-    d.style.backgroundPosition =
-        `-${DORSO.columna * ANCHO_CARTA}px -${DORSO.fila * ALTO_CARTA}px`;
-    return d;
+    const div = document.createElement("div");
+    div.style.width = ANCHO_CARTA + "px";
+    div.style.height = ALTO_CARTA + "px";
+    div.style.backgroundImage = "url('cartas/baraja.png')";
+    div.style.backgroundRepeat = "no-repeat";
+
+    const x = DORSO.columna * ANCHO_CARTA;
+    const y = DORSO.fila * ALTO_CARTA;
+    div.style.backgroundPosition = `-${x}px -${y}px`;
+
+    return div;
 }
 
 // ==============================
@@ -382,5 +332,5 @@ function crearDorsoDiv() {
 // ==============================
 
 document.addEventListener("DOMContentLoaded", () => {
-    document.getElementById("btnRepartir").onclick = repartir;
+    document.getElementById("btnRepartir").addEventListener("click", repartir);
 });
