@@ -3,10 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <title>Tute Online (prototipo)</title>
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!-- Estilos mínimos solo para colocación básica -->
     <style>
         body {
             margin: 0;
@@ -40,6 +38,7 @@
             right: 10px;
             z-index: 1500;
             text-align: center;
+            color: white;
         }
 
         #baza {
@@ -58,18 +57,22 @@
             z-index: 1000;
         }
 
+        /* 🔴 CLAVE: oculto por defecto */
         #fin-mano {
             position: fixed;
             top: 40%;
             left: 50%;
             transform: translate(-50%, -50%);
             z-index: 3000;
-            background: rgba(0, 0, 0, 0.6);
+            background: rgba(0, 0, 0, 0.7);
             padding: 20px 30px;
             border-radius: 10px;
+            display: none;
+            color: white;
+            text-align: center;
+            font-size: 20px;
         }
 
-        /* Contenedores de rivales */
         #rival-1, #rival-2, #rival-3 {
             z-index: 900;
         }
@@ -78,27 +81,19 @@
 
 <body>
 
-    <!-- CONTROLES -->
     <button id="btnRepartir">Repartir</button>
     <div id="turno"></div>
-
-    <!-- TRIUNFO -->
     <div id="triunfo"></div>
 
-    <!-- RIVALES -->
-    <div id="rival-1"></div> <!-- arriba -->
-    <div id="rival-2"></div> <!-- izquierda -->
-    <div id="rival-3"></div> <!-- derecha -->
+    <div id="rival-1"></div>
+    <div id="rival-2"></div>
+    <div id="rival-3"></div>
 
-    <!-- MESA -->
     <div id="baza"></div>
     <div id="mesa"></div>
 
-    <!-- FIN DE MANO / PUNTOS -->
     <div id="fin-mano"></div>
 
-    <!-- SCRIPT -->
     <script src="script.js"></script>
-
 </body>
 </html>
