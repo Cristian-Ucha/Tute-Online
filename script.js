@@ -37,9 +37,6 @@ let bazasJugadas = 0;
 let manoTerminada = false;
 let puntosPareja = [0, 0];
 
-let esperandoIA = false;
-let esperandoSalidaInicial = false; // 🔴 CLAVE
-
 // ==============================
 // DATOS TUTE
 // ==============================
@@ -108,7 +105,6 @@ function repartir() {
     cartaTriunfo = mano[Math.floor(Math.random() * mano.length)];
     triunfo = cartaTriunfo.palo;
 
-    // 🔴 sale el siguiente al que da
     turnoActual = (asientoQueDa + 1) % 4;
 
     bazaActual = [];
@@ -116,11 +112,8 @@ function repartir() {
     manoTerminada = false;
     puntosPareja = [0, 0];
 
-    esperandoIA = false;
-    esperandoSalidaInicial = true; // 🔴 clave
-
-    document.getElementById("fin-mano").style.display = "none";
     render();
+    gestionarTurno(); // 🔴 CLAVE
 }
 
 // ==============================
@@ -142,6 +135,28 @@ function cartasLegales(jugador) {
 }
 
 // ==============================
+// GESTIONAR TURNO (ÚNICO CONTROL)
+// ==============================
+
+function gestionarTurno() {
+    if (manoTerminada) return;
+
+    if (turnoActual === 0) {
+        // Humano: espera click
+        return;
+    }
+
+    // IA
+    setTimeout(() => {
+        const jugador = jugadores[turnoActual];
+        const legales = cartasLegales(jugador);
+        const carta = legales[0];
+        const indice = jugador.mano.indexOf(carta);
+        jugarCarta(turnoActual, indice);
+    }, 600);
+}
+
+// ==============================
 // JUGAR CARTA
 // ==============================
 
@@ -152,49 +167,16 @@ function jugarCarta(asiento, indice) {
     const carta = jugador.mano.splice(indice, 1)[0];
 
     bazaActual.push({ asiento, carta });
-    esperandoIA = false;
-
-    // 🔴 ya ha salido alguien
-    esperandoSalidaInicial = false;
 
     if (bazaActual.length === 4) {
+        render();
         setTimeout(resolverBaza, 1200);
-    } else {
-        turnoActual = (turnoActual + 1) % 4;
-    }
-
-    render();
-}
-
-// ==============================
-// IA
-// ==============================
-
-function jugarAutomatico() {
-    if (manoTerminada) return;
-    if (turnoActual === 0) return;
-    if (esperandoIA) return;
-    if (bazaActual.length === 4) return;
-
-    // 🔴 espera visual al inicio de la mano
-    if (esperandoSalidaInicial) {
-        esperandoIA = true;
-        setTimeout(() => {
-            esperandoIA = false;
-            jugarAutomatico();
-        }, 600);
         return;
     }
 
-    esperandoIA = true;
-
-    setTimeout(() => {
-        const jugador = jugadores[turnoActual];
-        const legales = cartasLegales(jugador);
-        const carta = legales[0];
-        const indice = jugador.mano.indexOf(carta);
-        jugarCarta(turnoActual, indice);
-    }, 600);
+    turnoActual = (turnoActual + 1) % 4;
+    render();
+    gestionarTurno();
 }
 
 // ==============================
@@ -229,10 +211,12 @@ function resolverBaza() {
 
     if (bazasJugadas === 10) {
         manoTerminada = true;
+        render();
+        return;
     }
 
-    esperandoSalidaInicial = true; // 🔴 nueva baza
     render();
+    gestionarTurno();
 }
 
 // ==============================
@@ -256,8 +240,6 @@ function render() {
             Pareja 0 (0 y 2): ${puntosPareja[0]} puntos<br>
             Pareja 1 (1 y 3): ${puntosPareja[1]} puntos
         `;
-    } else {
-        jugarAutomatico();
     }
 }
 
@@ -274,7 +256,6 @@ function renderMesaJugador() {
 
     jugador.mano.forEach((carta, i) => {
         const div = crearCartaDiv(carta);
-        div.classList.add("carta");
         div.style.zIndex = i;
 
         const esLegal = legales.includes(carta);
