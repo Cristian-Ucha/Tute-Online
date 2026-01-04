@@ -1,10 +1,167 @@
-#mesa {
-    margin-top: 20px;
-    display: flex;
-    justify-content: center;
-    flex-wrap: wrap;   
-    gap: 10px;
+/* =========================
+   RESET BÁSICO
+   ========================= */
+
+* {
+    box-sizing: border-box;
 }
+
 body {
-    outline: 5px solid red;
+    margin: 0;
+    padding: 0;
+    background-color: #0b5c3b; /* verde mesa */
+    font-family: Arial, sans-serif;
+    overflow: hidden;
+}
+
+/* =========================
+   MESA DEL JUGADOR (ABAJO)
+   ========================= */
+
+#mesa {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: flex-end;
+    height: 360px;
+}
+
+/* Carta del jugador */
+#mesa .carta {
+    position: relative;
+    width: 208px;
+    height: 319px;
+    margin-left: -120px;        /* 🔴 solape abanico */
+    transition: transform 0.2s ease;
+    cursor: pointer;
+}
+
+/* Primera carta no se solapa */
+#mesa .carta:first-child {
+    margin-left: 0;
+}
+
+/* Hover levantar carta */
+#mesa .carta:hover {
+    transform: translateY(-40px);
+    z-index: 1000;
+}
+
+/* Cartas no legales */
+#mesa .carta[style*="opacity: 0.4"] {
+    cursor: not-allowed;
+}
+
+/* =========================
+   BAZA (CENTRO)
+   ========================= */
+
+#baza {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    gap: 20px;
+    z-index: 10;
+}
+
+/* =========================
+   RIVALES
+   ========================= */
+
+/* Rival arriba */
+#rival-1 {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+}
+
+/* Rival izquierda */
+#rival-2 {
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+}
+
+/* Rival derecha */
+#rival-3 {
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+}
+
+/* Dorso rivales */
+#rival-1 div,
+#rival-2 div,
+#rival-3 div {
+    width: 208px;
+    height: 319px;
+}
+
+/* =========================
+   TRIUNFO
+   ========================= */
+
+#triunfo {
+    position: absolute;
+    right: 20px;
+    bottom: 420px;
+    text-align: center;
+    color: white;
+    font-weight: bold;
+}
+
+/* =========================
+   TURNO
+   ========================= */
+
+#turno {
+    position: absolute;
+    top: 10px;
+    width: 100%;
+    text-align: center;
+    color: white;
+    font-size: 18px;
+}
+
+/* =========================
+   FIN DE MANO
+   ========================= */
+
+#fin-mano {
+    position: absolute;
+    top: 40%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 20px 30px;
+    border-radius: 8px;
+    text-align: center;
+    display: none;
+    z-index: 50;
+}
+
+/* =========================
+   BOTÓN REPARTIR
+   ========================= */
+
+#btnRepartir {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    padding: 10px 18px;
+    font-size: 16px;
+    cursor: pointer;
 }
