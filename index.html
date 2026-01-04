@@ -2,21 +2,103 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Tute</title>
+    <title>Tute Online (prototipo)</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Estilos mínimos solo para colocación básica -->
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #0b5c3b;
+            font-family: Arial, sans-serif;
+        }
+
+        #btnRepartir {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            z-index: 2000;
+            padding: 8px 14px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        #turno {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            z-index: 2000;
+            color: white;
+            font-size: 16px;
+        }
+
+        #triunfo {
+            position: fixed;
+            top: 50px;
+            right: 10px;
+            z-index: 1500;
+            text-align: center;
+        }
+
+        #baza {
+            position: absolute;
+            top: 45%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1000;
+        }
+
+        #mesa {
+            position: fixed;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+        }
+
+        #fin-mano {
+            position: fixed;
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 3000;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 20px 30px;
+            border-radius: 10px;
+        }
+
+        /* Contenedores de rivales */
+        #rival-1, #rival-2, #rival-3 {
+            z-index: 900;
+        }
+    </style>
 </head>
+
 <body>
-<button id="btnRepartir">Repartir</button>
 
-<div id="turno"></div>
-<div id="triunfo"></div>
+    <!-- CONTROLES -->
+    <button id="btnRepartir">Repartir</button>
+    <div id="turno"></div>
 
-<div id="rival-1"></div>
-<div id="rival-2"></div>
-<div id="rival-3"></div>
+    <!-- TRIUNFO -->
+    <div id="triunfo"></div>
 
-<div id="baza"></div>
-<div id="mesa"></div>
+    <!-- RIVALES -->
+    <div id="rival-1"></div> <!-- arriba -->
+    <div id="rival-2"></div> <!-- izquierda -->
+    <div id="rival-3"></div> <!-- derecha -->
 
-<div id="fin-mano"></div>
+    <!-- MESA -->
+    <div id="baza"></div>
+    <div id="mesa"></div>
+
+    <!-- FIN DE MANO / PUNTOS -->
+    <div id="fin-mano"></div>
+
+    <!-- SCRIPT -->
+    <script src="script.js"></script>
+
 </body>
 </html>
