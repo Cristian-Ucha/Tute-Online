@@ -1,5 +1,5 @@
 /* =========================
-   RESET BÁSICO
+   RESET
    ========================= */
 
 * {
@@ -9,7 +9,7 @@
 body {
     margin: 0;
     padding: 0;
-    background-color: #0b5c3b; /* verde mesa */
+    background-color: #0b5c3b;
     font-family: Arial, sans-serif;
     overflow: hidden;
 }
@@ -56,34 +56,34 @@ body {
     height: 360px;
 }
 
-/* Carta del jugador */
-#mesa .carta {
+/* 🔴 CARTAS DEL JUGADOR (SIN CLASE) */
+#mesa > div {
     position: relative;
     width: 208px;
     height: 319px;
-    margin-left: -120px;          /* solape abanico */
+    margin-left: -120px;              /* abanico */
     transition: transform 0.2s ease;
     cursor: pointer;
 }
 
 /* Primera carta no se solapa */
-#mesa .carta:first-child {
+#mesa > div:first-child {
     margin-left: 0;
 }
 
-/* Hover levantar carta */
-#mesa .carta:hover {
+/* Hover: levantar carta */
+#mesa > div:hover {
     transform: translateY(-40px);
     z-index: 1000;
 }
 
-/* Cartas no legales */
-#mesa .carta[style*="opacity: 0.4"] {
+/* Cartas no legales (opacity aplicada por JS) */
+#mesa > div[style*="opacity: 0.4"] {
     cursor: not-allowed;
 }
 
 /* =========================
-   BAZA (CENTRO)
+   BAZA
    ========================= */
 
 #baza {
@@ -100,7 +100,6 @@ body {
    RIVALES
    ========================= */
 
-/* Rival arriba */
 #rival-1 {
     position: absolute;
     top: 20px;
@@ -109,7 +108,6 @@ body {
     display: flex;
 }
 
-/* Rival izquierda */
 #rival-2 {
     position: absolute;
     left: 20px;
@@ -119,7 +117,6 @@ body {
     flex-direction: column;
 }
 
-/* Rival derecha */
 #rival-3 {
     position: absolute;
     right: 20px;
@@ -169,7 +166,7 @@ body {
 }
 
 /* =========================
-   BOTÓN REPARTIR
+   BOTÓN
    ========================= */
 
 #btnRepartir {
