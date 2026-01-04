@@ -19,11 +19,16 @@ let bazaActual = [];
 let triunfo = null;
 let cartaTriunfo = null;
 let asientoQueDa = null;
+
 let bazasJugadas = 0;
 let manoTerminada = false;
 let puntosPareja = [0, 0];
 
-let esperandoIA = false; // 🔴 clave
+let esperandoIA = false; // 🔴 control estricto
+
+// ==============================
+// DATOS DEL TUTE
+// ==============================
 
 const PALOS = [
     { nombre: "oros", fila: 0 },
@@ -77,6 +82,7 @@ function repartir() {
     jugadores = ASIENTOS.map(a => ({ asiento: a, mano: [] }));
     const baraja = crearBaraja().sort(() => Math.random() - 0.5);
 
+    // 🔴 repartidor aleatorio solo la primera vez
     if (asientoQueDa === null) {
         asientoQueDa = Math.floor(Math.random() * 4);
     }
@@ -85,11 +91,14 @@ function repartir() {
         jugadores.forEach(j => j.mano.push(baraja.pop()));
     }
 
+    // 🔴 triunfo desde la mano del que da
     const mano = jugadores[asientoQueDa].mano;
     cartaTriunfo = mano[Math.floor(Math.random() * mano.length)];
     triunfo = cartaTriunfo.palo;
 
+    // 🔴 empieza el siguiente al que da
     turnoActual = (asientoQueDa + 1) % 4;
+
     bazaActual = [];
     bazasJugadas = 0;
     manoTerminada = false;
@@ -107,8 +116,9 @@ function repartir() {
 function cartasLegales(j) {
     if (bazaActual.length === 0) return j.mano;
 
-    const palo = bazaActual[0].carta.palo;
-    const delPalo = j.mano.filter(c => c.palo === palo);
+    const paloSalida = bazaActual[0].carta.palo;
+
+    const delPalo = j.mano.filter(c => c.palo === paloSalida);
     if (delPalo.length) return delPalo;
 
     const triunfos = j.mano.filter(c => c.palo === triunfo);
@@ -124,9 +134,10 @@ function cartasLegales(j) {
 function jugarCarta(asiento, index) {
     if (manoTerminada) return;
 
-    const carta = jugadores[asiento].mano.splice(index, 1)[0];
-    bazaActual.push({ asiento, carta });
+    const jugador = jugadores[asiento];
+    const carta = jugador.mano.splice(index, 1)[0];
 
+    bazaActual.push({ asiento, carta });
     esperandoIA = false;
 
     if (bazaActual.length === 4) {
@@ -139,13 +150,14 @@ function jugarCarta(asiento, index) {
 }
 
 // ==============================
-// JUGADOR AUTOMÁTICO (🔴 RESTAURADO)
+// IA (CORRECTA)
 // ==============================
 
 function jugarAutomatico() {
     if (manoTerminada) return;
     if (turnoActual === 0) return;
     if (esperandoIA) return;
+    if (bazaActual.length === 4) return;
 
     esperandoIA = true;
 
@@ -154,7 +166,6 @@ function jugarAutomatico() {
         const legales = cartasLegales(jugador);
         const carta = legales[0];
         const index = jugador.mano.indexOf(carta);
-
         jugarCarta(turnoActual, index);
     }, 600);
 }
@@ -218,25 +229,39 @@ function render() {
             Pareja 1 (1 y 3): ${puntosPareja[1]} puntos
         `;
     } else {
-        jugarAutomatico(); // 🔴 CLAVE
+        jugarAutomatico();
     }
 }
 
 // ==============================
-// RENDERS
+// RENDER MESA (🔴 ASISTIR)
 // ==============================
 
 function renderMesa() {
     const mesa = document.getElementById("mesa");
     mesa.innerHTML = "";
 
-    jugadores[0].mano.forEach((c, i) => {
+    const jugador = jugadores[0];
+    const legales = cartasLegales(jugador);
+
+    jugador.mano.forEach((c, i) => {
         const d = crearCarta(c);
         d.classList.add("carta");
-        d.onclick = () => turnoActual === 0 && jugarCarta(0, i);
+
+        const esLegal = legales.includes(c);
+        d.style.opacity = esLegal ? "1" : "0.4";
+
+        if (esLegal && turnoActual === 0 && !manoTerminada) {
+            d.onclick = () => jugarCarta(0, i);
+        }
+
         mesa.appendChild(d);
     });
 }
+
+// ==============================
+// RESTO DE RENDERS
+// ==============================
 
 function renderBaza() {
     const b = document.getElementById("baza");
