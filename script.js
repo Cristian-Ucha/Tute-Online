@@ -1,6 +1,14 @@
+// ==============================
+// CONFIGURACIÓN
+// ==============================
+
 const ANCHO_CARTA = 208;
 const ALTO_CARTA = 319;
 const DORSO = { fila: 4, columna: 1 };
+
+// ==============================
+// MODELO DE MESA
+// ==============================
 
 const ASIENTOS = [0, 1, 2, 3];
 const PAREJAS_POR_ASIENTO = { 0: 0, 2: 0, 1: 1, 3: 1 };
@@ -13,9 +21,14 @@ const PUNTOS_CARTA = {
     sota: 2
 };
 
+// ==============================
+// ESTADO DEL JUEGO
+// ==============================
+
 let jugadores = [];
 let turnoActual = 0;
 let bazaActual = [];
+
 let triunfo = null;
 let cartaTriunfo = null;
 let asientoQueDa = null;
@@ -25,7 +38,6 @@ let manoTerminada = false;
 let puntosPareja = [0, 0];
 
 let esperandoIA = false;
-let inicioDeMano = true; // 🔴 NUEVO: controla la salida real
 
 // ==============================
 // DATOS DEL TUTE
@@ -62,27 +74,32 @@ const VALORES = [
 
 function crearBaraja() {
     const baraja = [];
-    PALOS.forEach(p =>
-        VALORES.forEach(v =>
+    PALOS.forEach(palo => {
+        VALORES.forEach(valor => {
             baraja.push({
-                palo: p.nombre,
-                valor: v.nombre,
-                fila: p.fila,
-                columna: v.columna
-            })
-        )
-    );
+                palo: palo.nombre,
+                valor: valor.nombre,
+                fila: palo.fila,
+                columna: valor.columna
+            });
+        });
+    });
     return baraja;
 }
 
 // ==============================
-// REPARTO
+// REPARTO + TRIUNFO
 // ==============================
 
 function repartir() {
-    jugadores = ASIENTOS.map(a => ({ asiento: a, mano: [] }));
+    jugadores = ASIENTOS.map(a => ({
+        asiento: a,
+        mano: []
+    }));
+
     const baraja = crearBaraja().sort(() => Math.random() - 0.5);
 
+    // Repartidor aleatorio SOLO la primera mano
     if (asientoQueDa === null) {
         asientoQueDa = Math.floor(Math.random() * 4);
     }
@@ -91,12 +108,13 @@ function repartir() {
         jugadores.forEach(j => j.mano.push(baraja.pop()));
     }
 
+    // Triunfo desde la mano del que da
     const mano = jugadores[asientoQueDa].mano;
     cartaTriunfo = mano[Math.floor(Math.random() * mano.length)];
     triunfo = cartaTriunfo.palo;
 
-    turnoActual = (asientoQueDa + 1) % 4; // ✔ correcto
-    inicioDeMano = true;                  // 🔴 clave
+    // Empieza el siguiente al que da
+    turnoActual = (asientoQueDa + 1) % 4;
 
     bazaActual = [];
     bazasJugadas = 0;
@@ -109,36 +127,35 @@ function repartir() {
 }
 
 // ==============================
-// CARTAS LEGALES
+// CARTAS LEGALES (ASISTIR + TRIUNFO)
 // ==============================
 
-function cartasLegales(j) {
-    if (bazaActual.length === 0) return j.mano;
+function cartasLegales(jugador) {
+    if (bazaActual.length === 0) return jugador.mano;
 
     const paloSalida = bazaActual[0].carta.palo;
 
-    const delPalo = j.mano.filter(c => c.palo === paloSalida);
-    if (delPalo.length) return delPalo;
+    const delPalo = jugador.mano.filter(c => c.palo === paloSalida);
+    if (delPalo.length > 0) return delPalo;
 
-    const triunfos = j.mano.filter(c => c.palo === triunfo);
-    if (triunfos.length) return triunfos;
+    const triunfos = jugador.mano.filter(c => c.palo === triunfo);
+    if (triunfos.length > 0) return triunfos;
 
-    return j.mano;
+    return jugador.mano;
 }
 
 // ==============================
 // JUGAR CARTA
 // ==============================
 
-function jugarCarta(asiento, index) {
+function jugarCarta(asiento, indice) {
     if (manoTerminada) return;
 
     const jugador = jugadores[asiento];
-    const carta = jugador.mano.splice(index, 1)[0];
+    const carta = jugador.mano.splice(indice, 1)[0];
 
     bazaActual.push({ asiento, carta });
     esperandoIA = false;
-    inicioDeMano = false; // 🔴 ya se ha salido
 
     if (bazaActual.length === 4) {
         setTimeout(resolverBaza, 1200);
@@ -150,7 +167,7 @@ function jugarCarta(asiento, index) {
 }
 
 // ==============================
-// IA (CORREGIDA)
+// JUGADOR AUTOMÁTICO (IA)
 // ==============================
 
 function jugarAutomatico() {
@@ -159,17 +176,14 @@ function jugarAutomatico() {
     if (esperandoIA) return;
     if (bazaActual.length === 4) return;
 
-    // 🔴 NO ejecutar IA automáticamente al inicio de mano
-    if (inicioDeMano) return;
-
     esperandoIA = true;
 
     setTimeout(() => {
         const jugador = jugadores[turnoActual];
         const legales = cartasLegales(jugador);
         const carta = legales[0];
-        const index = jugador.mano.indexOf(carta);
-        jugarCarta(turnoActual, index);
+        const indice = jugador.mano.indexOf(carta);
+        jugarCarta(turnoActual, indice);
     }, 600);
 }
 
@@ -180,24 +194,26 @@ function jugarAutomatico() {
 function resolverBaza() {
     let ganadora = bazaActual[0];
 
-    bazaActual.forEach(j => {
-        const c = j.carta;
+    bazaActual.forEach(jugada => {
+        const c = jugada.carta;
         const g = ganadora.carta;
 
         if (c.palo === triunfo && g.palo !== triunfo) {
-            ganadora = j;
-        } else if (
-            c.palo === g.palo &&
-            ORDEN_VALORES.indexOf(c.valor) > ORDEN_VALORES.indexOf(g.valor)
-        ) {
-            ganadora = j;
+            ganadora = jugada;
+            return;
+        }
+
+        if (c.palo === g.palo) {
+            const v1 = ORDEN_VALORES.indexOf(c.valor);
+            const v2 = ORDEN_VALORES.indexOf(g.valor);
+            if (v1 > v2) ganadora = jugada;
         }
     });
 
     const pareja = PAREJAS_POR_ASIENTO[ganadora.asiento];
-    bazaActual.forEach(j => {
-        puntosPareja[pareja] += PUNTOS_CARTA[j.carta.valor] || 0;
-    });
+    bazaActual.forEach(j =>
+        puntosPareja[pareja] += PUNTOS_CARTA[j.carta.valor] || 0
+    );
 
     turnoActual = ganadora.asiento;
     bazaActual = [];
@@ -207,7 +223,6 @@ function resolverBaza() {
         manoTerminada = true;
     }
 
-    inicioDeMano = true; // 🔴 nueva baza → nueva salida
     render();
 }
 
@@ -216,10 +231,10 @@ function resolverBaza() {
 // ==============================
 
 function render() {
-    renderMesa();
+    renderMesaJugador();
+    renderRivales();
     renderBaza();
     renderTriunfo();
-    renderRivales();
 
     document.getElementById("turno").textContent =
         "Turno del asiento " + turnoActual;
@@ -238,78 +253,88 @@ function render() {
 }
 
 // ==============================
-// RENDER MESA (Z-INDEX FIJO)
+// RENDER MANO HUMANA
 // ==============================
 
-function renderMesa() {
+function renderMesaJugador() {
     const mesa = document.getElementById("mesa");
     mesa.innerHTML = "";
 
     const jugador = jugadores[0];
     const legales = cartasLegales(jugador);
 
-    jugador.mano.forEach((c, i) => {
-        const d = crearCarta(c);
-        d.classList.add("carta");
+    jugador.mano.forEach((carta, i) => {
+        const div = crearCartaDiv(carta);
+        div.classList.add("carta");
+        div.style.zIndex = i;
 
-        d.style.zIndex = i; // 🔴 CLAVE
-        const esLegal = legales.includes(c);
-        d.style.opacity = esLegal ? "1" : "0.4";
+        const esLegal = legales.includes(carta);
+        div.style.opacity = esLegal ? "1" : "0.4";
 
         if (esLegal && turnoActual === 0 && !manoTerminada) {
-            d.onclick = () => jugarCarta(0, i);
+            div.onclick = () => jugarCarta(0, i);
         }
 
-        mesa.appendChild(d);
+        mesa.appendChild(div);
     });
 }
 
 // ==============================
-// RESTO DE RENDER
+// RENDER RIVALES
 // ==============================
-
-function renderBaza() {
-    const b = document.getElementById("baza");
-    b.innerHTML = "";
-    bazaActual.forEach(j => b.appendChild(crearCarta(j.carta)));
-}
-
-function renderTriunfo() {
-    const t = document.getElementById("triunfo");
-    t.innerHTML = "Triunfo<br>";
-    t.appendChild(crearCarta(cartaTriunfo));
-}
 
 function renderRivales() {
     [1, 2, 3].forEach(id => {
-        const c = document.getElementById("rival-" + id);
-        c.innerHTML = "";
-        jugadores[id].mano.forEach(() => c.appendChild(crearDorso()));
+        const cont = document.getElementById("rival-" + id);
+        cont.innerHTML = "";
+        jugadores[id].mano.forEach(() => cont.appendChild(crearDorsoDiv()));
     });
 }
 
 // ==============================
-// CARTAS
+// RENDER BAZA
 // ==============================
 
-function crearCarta(c) {
-    const d = document.createElement("div");
-    d.style.width = ANCHO_CARTA + "px";
-    d.style.height = ALTO_CARTA + "px";
-    d.style.backgroundImage = "url('cartas/baraja.png')";
-    d.style.backgroundPosition =
-        `-${c.columna * ANCHO_CARTA}px -${c.fila * ALTO_CARTA}px`;
-    return d;
+function renderBaza() {
+    const baza = document.getElementById("baza");
+    baza.innerHTML = "";
+    bazaActual.forEach(j => baza.appendChild(crearCartaDiv(j.carta)));
 }
 
-function crearDorso() {
-    const d = document.createElement("div");
-    d.style.width = ANCHO_CARTA + "px";
-    d.style.height = ALTO_CARTA + "px";
-    d.style.backgroundImage = "url('cartas/baraja.png')";
-    d.style.backgroundPosition =
+// ==============================
+// RENDER TRIUNFO
+// ==============================
+
+function renderTriunfo() {
+    const cont = document.getElementById("triunfo");
+    cont.innerHTML = "Triunfo<br>";
+    cont.appendChild(crearCartaDiv(cartaTriunfo));
+}
+
+// ==============================
+// CARTAS (SPRITE)
+// ==============================
+
+function crearCartaDiv(carta) {
+    const div = document.createElement("div");
+    div.style.width = ANCHO_CARTA + "px";
+    div.style.height = ALTO_CARTA + "px";
+    div.style.backgroundImage = "url('cartas/baraja.png')";
+    div.style.backgroundRepeat = "no-repeat";
+    div.style.backgroundPosition =
+        `-${carta.columna * ANCHO_CARTA}px -${carta.fila * ALTO_CARTA}px`;
+    return div;
+}
+
+function crearDorsoDiv() {
+    const div = document.createElement("div");
+    div.style.width = ANCHO_CARTA + "px";
+    div.style.height = ALTO_CARTA + "px";
+    div.style.backgroundImage = "url('cartas/baraja.png')";
+    div.style.backgroundRepeat = "no-repeat";
+    div.style.backgroundPosition =
         `-${DORSO.columna * ANCHO_CARTA}px -${DORSO.fila * ALTO_CARTA}px`;
-    return d;
+    return div;
 }
 
 // ==============================
