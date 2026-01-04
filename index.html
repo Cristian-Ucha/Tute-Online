@@ -2,141 +2,38 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Tute Online (prototipo)</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <style>
-        body {
-            margin: 0;
-            background-color: #0b5c3b;
-            font-family: Arial, sans-serif;
-        }
-
-        #btnRepartir {
-            position: fixed;
-            top: 10px;
-            left: 10px;
-            z-index: 2000;
-            padding: 8px 14px;
-            cursor: pointer;
-        }
-
-        #turno {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            color: white;
-            z-index: 2000;
-        }
-
-        #triunfo {
-            position: fixed;
-            top: 50px;
-            right: 10px;
-            text-align: center;
-            color: white;
-            z-index: 1500;
-        }
-
-        /* =========================
-           MESA DEL JUGADOR (CLAVE)
-           ========================= */
-        #mesa {
-            position: fixed;
-            bottom: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            flex-direction: row;      /* 🔴 CLAVE */
-            align-items: flex-end;
-            z-index: 1000;
-        }
-
-        #mesa .carta {
-            margin-left: -120px;
-            transition: transform 0.15s ease;
-        }
-
-        #mesa .carta:first-child {
-            margin-left: 0;
-        }
-
-        #mesa .carta:hover {
-            transform: translateY(-40px);
-            z-index: 2000;
-        }
-
-        /* ========================= */
-
-        #baza {
-            position: absolute;
-            top: 45%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            display: flex;
-            gap: 10px;
-            z-index: 1000;
-        }
-
-        #fin-mano {
-            position: fixed;
-            top: 40%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0,0,0,0.7);
-            padding: 20px 30px;
-            border-radius: 10px;
-            color: white;
-            display: none;
-            z-index: 3000;
-            text-align: center;
-            font-size: 20px;
-        }
-
-        #rival-1, #rival-2, #rival-3 {
-            position: absolute;
-            z-index: 900;
-        }
-
-        #rival-1 {
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-        }
-
-        #rival-2 {
-            left: 20px;
-            top: 50%;
-            transform: translateY(-50%);
-            display: flex;
-            flex-direction: column;
-        }
-
-        #rival-3 {
-            right: 20px;
-            top: 50%;
-            transform: translateY(-50%);
-            display: flex;
-            flex-direction: column;
-        }
-    </style>
+    <title>Tute Online</title>
+    <link rel="stylesheet" href="style.css?v=1">
 </head>
-
 <body>
 
-<button id="btnRepartir">Repartir</button>
-<div id="turno"></div>
-<div id="triunfo"></div>
+    <!-- TÍTULO -->
+    <h1 id="titulo">Tute Online</h1>
 
-<div id="rival-1"></div>
-<div id="rival-2"></div>
-<div id="rival-3"></div>
+    <!-- INFO TURNO -->
+    <div id="turno"></div>
 
-<div id="baza"></div>
-<div id="mesa"></div>
-<div id="fin-mano"></div>
+    <!-- RIVALES -->
+    <div id="rival-1"></div>
+    <div id="rival-2"></div>
+    <div id="rival-3"></div>
 
-<script src="script.js"></script>
+    <!-- TRIUNFO -->
+    <div id="triunfo"></div>
+
+    <!-- BAZA -->
+    <div id="baza"></div>
+
+    <!-- MESA JUGADOR -->
+    <div id="mesa"></div>
+
+    <!-- FIN DE MANO -->
+    <div id="fin-mano"></div>
+
+    <!-- BOTÓN -->
+    <button id="btnRepartir">Repartir</button>
+
+    <!-- SCRIPT -->
+    <script src="script.js?v=1"></script>
 </body>
 </html>
