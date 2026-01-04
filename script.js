@@ -23,6 +23,8 @@ let bazasJugadas = 0;
 let manoTerminada = false;
 let puntosPareja = [0, 0];
 
+let esperandoIA = false; // 🔴 clave
+
 const PALOS = [
     { nombre: "oros", fila: 0 },
     { nombre: "copas", fila: 1 },
@@ -48,6 +50,10 @@ const VALORES = [
     { nombre: "rey", columna: 11 }
 ];
 
+// ==============================
+// BARAJA
+// ==============================
+
 function crearBaraja() {
     const baraja = [];
     PALOS.forEach(p =>
@@ -62,6 +68,10 @@ function crearBaraja() {
     );
     return baraja;
 }
+
+// ==============================
+// REPARTO
+// ==============================
 
 function repartir() {
     jugadores = ASIENTOS.map(a => ({ asiento: a, mano: [] }));
@@ -84,10 +94,15 @@ function repartir() {
     bazasJugadas = 0;
     manoTerminada = false;
     puntosPareja = [0, 0];
+    esperandoIA = false;
 
     document.getElementById("fin-mano").style.display = "none";
     render();
 }
+
+// ==============================
+// CARTAS LEGALES
+// ==============================
 
 function cartasLegales(j) {
     if (bazaActual.length === 0) return j.mano;
@@ -102,11 +117,17 @@ function cartasLegales(j) {
     return j.mano;
 }
 
+// ==============================
+// JUGAR CARTA
+// ==============================
+
 function jugarCarta(asiento, index) {
     if (manoTerminada) return;
 
     const carta = jugadores[asiento].mano.splice(index, 1)[0];
     bazaActual.push({ asiento, carta });
+
+    esperandoIA = false;
 
     if (bazaActual.length === 4) {
         setTimeout(resolverBaza, 1200);
@@ -116,6 +137,31 @@ function jugarCarta(asiento, index) {
 
     render();
 }
+
+// ==============================
+// JUGADOR AUTOMÁTICO (🔴 RESTAURADO)
+// ==============================
+
+function jugarAutomatico() {
+    if (manoTerminada) return;
+    if (turnoActual === 0) return;
+    if (esperandoIA) return;
+
+    esperandoIA = true;
+
+    setTimeout(() => {
+        const jugador = jugadores[turnoActual];
+        const legales = cartasLegales(jugador);
+        const carta = legales[0];
+        const index = jugador.mano.indexOf(carta);
+
+        jugarCarta(turnoActual, index);
+    }, 600);
+}
+
+// ==============================
+// RESOLVER BAZA
+// ==============================
 
 function resolverBaza() {
     let ganadora = bazaActual[0];
@@ -150,6 +196,10 @@ function resolverBaza() {
     render();
 }
 
+// ==============================
+// RENDER GENERAL
+// ==============================
+
 function render() {
     renderMesa();
     renderBaza();
@@ -167,8 +217,14 @@ function render() {
             Pareja 0 (0 y 2): ${puntosPareja[0]} puntos<br>
             Pareja 1 (1 y 3): ${puntosPareja[1]} puntos
         `;
+    } else {
+        jugarAutomatico(); // 🔴 CLAVE
     }
 }
+
+// ==============================
+// RENDERS
+// ==============================
 
 function renderMesa() {
     const mesa = document.getElementById("mesa");
@@ -202,6 +258,10 @@ function renderRivales() {
     });
 }
 
+// ==============================
+// CARTAS
+// ==============================
+
 function crearCarta(c) {
     const d = document.createElement("div");
     d.style.width = ANCHO_CARTA + "px";
@@ -221,5 +281,9 @@ function crearDorso() {
         `-${DORSO.columna * ANCHO_CARTA}px -${DORSO.fila * ALTO_CARTA}px`;
     return d;
 }
+
+// ==============================
+// BOTÓN
+// ==============================
 
 document.getElementById("btnRepartir").onclick = repartir;
