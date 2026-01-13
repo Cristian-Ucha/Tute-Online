@@ -21,7 +21,6 @@ const PUNTOS_CARTA = {
     sota: 2
 };
 
-// Escala de PODER (clave para subir)
 const ORDEN_PODER = [
     "dos", "cuatro", "cinco", "seis", "siete",
     "sota", "caballo", "rey", "tres", "as"
@@ -148,8 +147,9 @@ function repartir() {
         jugadores.forEach(j => j.mano.push(baraja.pop()));
     }
 
-    const manoRepartidor = jugadores[asientoQueDa].mano;
-    cartaTriunfo = manoRepartidor[Math.floor(Math.random() * manoRepartidor.length)];
+    cartaTriunfo = jugadores[asientoQueDa].mano[
+        Math.floor(Math.random() * jugadores[asientoQueDa].mano.length)
+    ];
     triunfo = cartaTriunfo.palo;
 
     jugadores.forEach(ordenarMano);
@@ -159,7 +159,6 @@ function repartir() {
     bazasJugadas = 0;
     manoTerminada = false;
 
-    recalcularTodosLosCanticos();
     render();
     gestionarTurno();
 }
@@ -171,7 +170,7 @@ function repartir() {
 function cartasLegales(jugador) {
     if (bazaActual.length === 0) return jugador.mano;
 
-    const cartaDominante = bazaActual.reduce((g, j) =>
+    const dominante = bazaActual.reduce((g, j) =>
         cartaGana(j.carta, g.carta) ? j : g
     ).carta;
 
@@ -179,44 +178,17 @@ function cartasLegales(jugador) {
 
     const delPalo = jugador.mano.filter(c => c.palo === paloSalida);
     if (delPalo.length) {
-        const superiores = delPalo.filter(c => cartaGana(c, cartaDominante));
+        const superiores = delPalo.filter(c => cartaGana(c, dominante));
         return superiores.length ? superiores : delPalo;
     }
 
     const triunfos = jugador.mano.filter(c => c.palo === triunfo);
     if (triunfos.length) {
-        const superiores = triunfos.filter(c => cartaGana(c, cartaDominante));
+        const superiores = triunfos.filter(c => cartaGana(c, dominante));
         return superiores.length ? superiores : triunfos;
     }
 
     return jugador.mano;
-}
-
-// ==============================
-// CÁNTICOS (SIN CAMBIOS)
-// ==============================
-
-function calcularPosiblesCanticos(jugador) {
-    const posibles = [];
-
-    PALOS.forEach(palo => {
-        const tieneRey = jugador.mano.some(c => c.valor === "rey" && c.palo === palo.nombre);
-        const tieneCaballo = jugador.mano.some(c => c.valor === "caballo" && c.palo === palo.nombre);
-        const yaCantado = jugador.canticosRealizados.some(c => c.palo === palo.nombre);
-
-        if (tieneRey && tieneCaballo && !yaCantado) {
-            posibles.push({
-                palo: palo.nombre,
-                tipo: palo.nombre === triunfo ? 40 : 20
-            });
-        }
-    });
-
-    return posibles;
-}
-
-function recalcularTodosLosCanticos() {
-    jugadores.forEach(j => j.posiblesCanticos = calcularPosiblesCanticos(j));
 }
 
 // ==============================
@@ -245,7 +217,6 @@ function jugarCarta(asiento, indice) {
 
     bazaActual.push({ asiento, carta });
     ordenarMano(jugador);
-    recalcularTodosLosCanticos();
 
     if (bazaActual.length === 4) {
         render();
@@ -264,7 +235,6 @@ function jugarCarta(asiento, indice) {
 
 function resolverBaza() {
     let ganadora = bazaActual[0];
-
     bazaActual.forEach(j => {
         if (cartaGana(j.carta, ganadora.carta)) ganadora = j;
     });
@@ -275,19 +245,13 @@ function resolverBaza() {
         puntosPareja[pareja] += PUNTOS_CARTA[j.carta.valor] || 0;
     });
 
-    jugadores.forEach(j => {
-        if (PAREJAS_POR_ASIENTO[j.asiento] === pareja) {
-            j.haGanadoBazaEnLaMano = true;
-            j.haCantadoEnEstaBaza = false;
-        }
-    });
-
     turnoActual = ganadora.asiento;
     bazaActual = [];
     bazasJugadas++;
 
     if (bazasJugadas === 10) {
         manoTerminada = true;
+        render();
         mostrarResultadoFinal();
         return;
     }
@@ -297,7 +261,7 @@ function resolverBaza() {
 }
 
 // ==============================
-// RENDER (SIN CAMBIOS VISUALES)
+// RENDER
 // ==============================
 
 function render() {
@@ -305,7 +269,66 @@ function render() {
     renderRivales();
     renderBaza();
     renderTriunfo();
-    document.getElementById("turno").textContent = "Turno del asiento " + turnoActual;
+    document.getElementById("turno").textContent =
+        "Turno del asiento " + turnoActual;
+}
+
+// ==============================
+// RENDER MANO JUGADOR (ABANICO)
+// ==============================
+
+function renderMesaJugador() {
+    const mesa = document.getElementById("mesa");
+    mesa.innerHTML = "";
+
+    const jugador = jugadores[0];
+    const legales = cartasLegales(jugador);
+
+    jugador.mano.forEach((carta, i) => {
+        const div = crearCartaDiv(carta);
+        div.style.marginLeft = i === 0 ? "0px" : "-120px";
+        div.style.zIndex = i;
+        div.style.transition = "transform 0.15s ease";
+        div.style.opacity = legales.includes(carta) ? "1" : "0.4";
+
+        if (legales.includes(carta) && turnoActual === 0 && !manoTerminada) {
+            div.onmouseenter = () => {
+                div.style.transform = "translateY(-40px)";
+                div.style.zIndex = 1000;
+            };
+            div.onmouseleave = () => {
+                div.style.transform = "translateY(0)";
+                div.style.zIndex = i;
+            };
+            div.onclick = () => jugarCarta(0, i);
+        }
+
+        mesa.appendChild(div);
+    });
+}
+
+// ==============================
+// RENDER RESTO (SIN CAMBIOS)
+// ==============================
+
+function renderRivales() {
+    [1, 2, 3].forEach(id => {
+        const cont = document.getElementById("rival-" + id);
+        cont.innerHTML = "";
+        jugadores[id].mano.forEach(() => cont.appendChild(crearDorsoDiv()));
+    });
+}
+
+function renderBaza() {
+    const b = document.getElementById("baza");
+    b.innerHTML = "";
+    bazaActual.forEach(j => b.appendChild(crearCartaDiv(j.carta)));
+}
+
+function renderTriunfo() {
+    const t = document.getElementById("triunfo");
+    t.innerHTML = "Triunfo<br>";
+    t.appendChild(crearCartaDiv(cartaTriunfo));
 }
 
 // ==============================
@@ -330,50 +353,14 @@ function mostrarResultadoFinal() {
 
     div.innerHTML = `
         <strong>Fin de la mano</strong><br><br>
-        Pareja 0: ${puntosPareja[0] + puntosCanticosPareja[0]}<br>
-        Pareja 1: ${puntosPareja[1] + puntosCanticosPareja[1]}
+        Pareja 0: ${puntosPareja[0]}<br>
+        Pareja 1: ${puntosPareja[1]}
     `;
 }
 
 // ==============================
-// RENDER CARTAS (IGUAL)
+// CARTAS
 // ==============================
-
-function renderMesaJugador() {
-    const mesa = document.getElementById("mesa");
-    mesa.innerHTML = "";
-    const j = jugadores[0];
-    const legales = cartasLegales(j);
-
-    j.mano.forEach((c, i) => {
-        const div = crearCartaDiv(c);
-        div.style.opacity = legales.includes(c) ? "1" : "0.4";
-        if (turnoActual === 0 && legales.includes(c)) {
-            div.onclick = () => jugarCarta(0, i);
-        }
-        mesa.appendChild(div);
-    });
-}
-
-function renderRivales() {
-    [1, 2, 3].forEach(id => {
-        const cont = document.getElementById("rival-" + id);
-        cont.innerHTML = "";
-        jugadores[id].mano.forEach(() => cont.appendChild(crearDorsoDiv()));
-    });
-}
-
-function renderBaza() {
-    const b = document.getElementById("baza");
-    b.innerHTML = "";
-    bazaActual.forEach(j => b.appendChild(crearCartaDiv(j.carta)));
-}
-
-function renderTriunfo() {
-    const t = document.getElementById("triunfo");
-    t.innerHTML = "Triunfo<br>";
-    t.appendChild(crearCartaDiv(cartaTriunfo));
-}
 
 function crearCartaDiv(carta) {
     const d = document.createElement("div");
