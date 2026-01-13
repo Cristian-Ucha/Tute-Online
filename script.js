@@ -1,5 +1,5 @@
 // ==============================
-// CONFIGURACIÓN
+// CONFIGURACIÓN CARTAS
 // ==============================
 
 const ANCHO_CARTA = 208;
@@ -7,22 +7,14 @@ const ALTO_CARTA = 319;
 const DORSO = { fila: 4, columna: 1 };
 
 // ==============================
-// MODELO
+// MODELO GENERAL
 // ==============================
 
 const ASIENTOS = [0, 1, 2, 3];
 const PAREJAS_POR_ASIENTO = { 0: 0, 2: 0, 1: 1, 3: 1 };
 
-const PUNTOS_CARTA = {
-    as: 11,
-    tres: 10,
-    rey: 4,
-    caballo: 3,
-    sota: 2
-};
-
 // ==============================
-// ESTADO
+// ESTADO DEL JUEGO
 // ==============================
 
 let jugadores = [];
@@ -35,10 +27,9 @@ let asientoQueDa = null;
 
 let bazasJugadas = 0;
 let manoTerminada = false;
-let puntosPareja = [0, 0];
 
 // ==============================
-// DATOS TUTE
+// DATOS DEL TUTE
 // ==============================
 
 const PALOS = [
@@ -90,7 +81,15 @@ function crearBaraja() {
 // ==============================
 
 function repartir() {
-    jugadores = ASIENTOS.map(a => ({ asiento: a, mano: [] }));
+    jugadores = ASIENTOS.map(a => ({
+        asiento: a,
+        mano: [],
+        posiblesCanticos: [],
+        canticosRealizados: [],
+        haCantadoEnEstaBaza: false,
+        haGanadoBazaEnLaMano: false
+    }));
+
     const baraja = crearBaraja().sort(() => Math.random() - 0.5);
 
     if (asientoQueDa === null) {
@@ -101,8 +100,8 @@ function repartir() {
         jugadores.forEach(j => j.mano.push(baraja.pop()));
     }
 
-    const mano = jugadores[asientoQueDa].mano;
-    cartaTriunfo = mano[Math.floor(Math.random() * mano.length)];
+    const manoDelQueDa = jugadores[asientoQueDa].mano;
+    cartaTriunfo = manoDelQueDa[Math.floor(Math.random() * manoDelQueDa.length)];
     triunfo = cartaTriunfo.palo;
 
     turnoActual = (asientoQueDa + 1) % 4;
@@ -110,10 +109,55 @@ function repartir() {
     bazaActual = [];
     bazasJugadas = 0;
     manoTerminada = false;
-    puntosPareja = [0, 0];
 
+    recalcularTodosLosCanticos();
     render();
-    gestionarTurno(); // 🔴 CLAVE
+    gestionarTurno();
+}
+
+// ==============================
+// CÁLCULO DE CÁNTICOS
+// ==============================
+
+function calcularPosiblesCanticos(jugador) {
+    const posibles = [];
+
+    PALOS.forEach(palo => {
+        const tieneRey = jugador.mano.some(
+            c => c.valor === "rey" && c.palo === palo.nombre
+        );
+        const tieneCaballo = jugador.mano.some(
+            c => c.valor === "caballo" && c.palo === palo.nombre
+        );
+
+        const yaCantado = jugador.canticosRealizados.some(
+            c => c.palo === palo.nombre
+        );
+
+        if (tieneRey && tieneCaballo && !yaCantado) {
+            posibles.push({
+                palo: palo.nombre,
+                tipo: palo.nombre === triunfo ? 40 : 20
+            });
+        }
+    });
+
+    return posibles;
+}
+
+function recalcularTodosLosCanticos() {
+    jugadores.forEach(j => {
+        j.posiblesCanticos = calcularPosiblesCanticos(j);
+    });
+}
+
+function puedeCantar(jugador) {
+    return (
+        jugador.haGanadoBazaEnLaMano &&
+        jugador.posiblesCanticos.length > 0 &&
+        !jugador.haCantadoEnEstaBaza &&
+        bazaActual.length === 0
+    );
 }
 
 // ==============================
@@ -135,18 +179,14 @@ function cartasLegales(jugador) {
 }
 
 // ==============================
-// GESTIONAR TURNO (ÚNICO CONTROL)
+// FLUJO DE TURNOS
 // ==============================
 
 function gestionarTurno() {
     if (manoTerminada) return;
 
-    if (turnoActual === 0) {
-        // Humano: espera click
-        return;
-    }
+    if (turnoActual === 0) return;
 
-    // IA
     setTimeout(() => {
         const jugador = jugadores[turnoActual];
         const legales = cartasLegales(jugador);
@@ -167,6 +207,8 @@ function jugarCarta(asiento, indice) {
     const carta = jugador.mano.splice(indice, 1)[0];
 
     bazaActual.push({ asiento, carta });
+
+    recalcularTodosLosCanticos();
 
     if (bazaActual.length === 4) {
         render();
@@ -194,16 +236,21 @@ function resolverBaza() {
             ganadora = j;
         } else if (
             c.palo === g.palo &&
-            ORDEN_VALORES.indexOf(c.valor) > ORDEN_VALORES.indexOf(g.valor)
+            ORDEN_VALORES.indexOf(c.valor) >
+                ORDEN_VALORES.indexOf(g.valor)
         ) {
             ganadora = j;
         }
     });
 
-    const pareja = PAREJAS_POR_ASIENTO[ganadora.asiento];
-    bazaActual.forEach(j =>
-        puntosPareja[pareja] += PUNTOS_CARTA[j.carta.valor] || 0
-    );
+    const parejaGanadora = PAREJAS_POR_ASIENTO[ganadora.asiento];
+
+    jugadores.forEach(j => {
+        if (PAREJAS_POR_ASIENTO[j.asiento] === parejaGanadora) {
+            j.haGanadoBazaEnLaMano = true;
+            j.haCantadoEnEstaBaza = false;
+        }
+    });
 
     turnoActual = ganadora.asiento;
     bazaActual = [];
@@ -215,6 +262,7 @@ function resolverBaza() {
         return;
     }
 
+    recalcularTodosLosCanticos();
     render();
     gestionarTurno();
 }
@@ -231,20 +279,10 @@ function render() {
 
     document.getElementById("turno").textContent =
         "Turno del asiento " + turnoActual;
-
-    if (manoTerminada) {
-        const f = document.getElementById("fin-mano");
-        f.style.display = "block";
-        f.innerHTML = `
-            <strong>Fin de la mano</strong><br><br>
-            Pareja 0 (0 y 2): ${puntosPareja[0]} puntos<br>
-            Pareja 1 (1 y 3): ${puntosPareja[1]} puntos
-        `;
-    }
 }
 
 // ==============================
-// RENDER MANO HUMANA
+// RENDER JUGADOR HUMANO
 // ==============================
 
 function renderMesaJugador() {
@@ -270,29 +308,33 @@ function renderMesaJugador() {
 }
 
 // ==============================
-// RENDER RIVALES
+// RIVALES
 // ==============================
 
 function renderRivales() {
     [1, 2, 3].forEach(id => {
         const cont = document.getElementById("rival-" + id);
         cont.innerHTML = "";
-        jugadores[id].mano.forEach(() => cont.appendChild(crearDorsoDiv()));
+        jugadores[id].mano.forEach(() =>
+            cont.appendChild(crearDorsoDiv())
+        );
     });
 }
 
 // ==============================
-// RENDER BAZA
+// BAZA
 // ==============================
 
 function renderBaza() {
     const baza = document.getElementById("baza");
     baza.innerHTML = "";
-    bazaActual.forEach(j => baza.appendChild(crearCartaDiv(j.carta)));
+    bazaActual.forEach(j =>
+        baza.appendChild(crearCartaDiv(j.carta))
+    );
 }
 
 // ==============================
-// RENDER TRIUNFO
+// TRIUNFO
 // ==============================
 
 function renderTriunfo() {
