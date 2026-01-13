@@ -27,7 +27,7 @@ const ORDEN_PODER = [
 ];
 
 // ==============================
-// ESTADO
+// ESTADO GLOBAL
 // ==============================
 
 let jugadores = [];
@@ -43,8 +43,9 @@ let primeraMano = true;
 let bazasJugadas = 0;
 let manoTerminada = false;
 
-// 👇 CLAVE: control por pareja
-let parejaHaGanadoBaza = [false, false];
+// 👇 CLAVE PARA CÁNTICOS
+let parejaPuedeCantar = [false, false];
+let canticosDisponiblesEstaBaza = [0, 0]; // cuántos jugadores de la pareja pueden cantar
 
 let puntosPareja = [0, 0];
 let puntosCanticos = [0, 0];
@@ -129,13 +130,13 @@ function repartir() {
         asiento: a,
         mano: [],
         posiblesCanticos: [],
-        canticosRealizados: [],
-        haCantadoEstaBaza: false
+        canticosRealizados: []
     }));
 
-    parejaHaGanadoBaza = [false, false];
     puntosPareja = [0, 0];
     puntosCanticos = [0, 0];
+    parejaPuedeCantar = [false, false];
+    canticosDisponiblesEstaBaza = [0, 0];
 
     const baraja = crearBaraja().sort(() => Math.random() - 0.5);
 
@@ -191,11 +192,11 @@ function recalcularCanticos() {
 function puedeCantar(j) {
     const pareja = PAREJA[j.asiento];
     return (
-        parejaHaGanadoBaza[pareja] &&
+        parejaPuedeCantar[pareja] &&
+        canticosDisponiblesEstaBaza[pareja] > 0 &&
         j.posiblesCanticos.length > 0 &&
-        !j.haCantadoEstaBaza &&
-        bazaActual.length === 0 &&
-        turnoActual === j.asiento
+        turnoActual === j.asiento &&
+        bazaActual.length === 0
     );
 }
 
@@ -205,9 +206,10 @@ function ejecutarCantico() {
 
     const cantico = j.posiblesCanticos[0];
     j.canticosRealizados.push(cantico);
-    j.haCantadoEstaBaza = true;
 
     puntosCanticos[PAREJA[j.asiento]] += cantico.puntos;
+    canticosDisponiblesEstaBaza[PAREJA[j.asiento]]--;
+
     recalcularCanticos();
     render();
 }
@@ -290,13 +292,12 @@ function resolverBaza() {
     });
 
     const pareja = PAREJA[ganadora.asiento];
-    parejaHaGanadoBaza[pareja] = true;
+    parejaPuedeCantar[pareja] = true;
+    canticosDisponiblesEstaBaza[pareja] = 2;
 
     bazaActual.forEach(j => {
         puntosPareja[pareja] += PUNTOS_CARTA[j.carta.valor] || 0;
     });
-
-    jugadores.forEach(j => j.haCantadoEstaBaza = false);
 
     turnoActual = ganadora.asiento;
     bazaActual = [];
@@ -304,7 +305,6 @@ function resolverBaza() {
 
     if (bazasJugadas === 10) {
         manoTerminada = true;
-        render();
         mostrarResultado();
         return;
     }
@@ -432,7 +432,8 @@ function crearCartaDiv(c) {
     d.style.width = ANCHO_CARTA + "px";
     d.style.height = ALTO_CARTA + "px";
     d.style.backgroundImage = "url('cartas/baraja.png')";
-    d.style.backgroundPosition = `-${c.columna * ANCHO_CARTA}px -${c.fila * ALTO_CARTA}px`;
+    d.style.backgroundPosition =
+        `-${c.columna * ANCHO_CARTA}px -${c.fila * ALTO_CARTA}px`;
     return d;
 }
 
@@ -441,7 +442,8 @@ function crearDorsoDiv() {
     d.style.width = ANCHO_CARTA + "px";
     d.style.height = ALTO_CARTA + "px";
     d.style.backgroundImage = "url('cartas/baraja.png')";
-    d.style.backgroundPosition = `-${DORSO.columna * ANCHO_CARTA}px -${DORSO.fila * ALTO_CARTA}px`;
+    d.style.backgroundPosition =
+        `-${DORSO.columna * ANCHO_CARTA}px -${DORSO.fila * ALTO_CARTA}px`;
     return d;
 }
 
