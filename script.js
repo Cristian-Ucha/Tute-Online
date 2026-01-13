@@ -13,8 +13,16 @@ const DORSO = { fila: 4, columna: 1 };
 const ASIENTOS = [0, 1, 2, 3];
 const PAREJAS_POR_ASIENTO = { 0: 0, 2: 0, 1: 1, 3: 1 };
 
+const PUNTOS_CARTA = {
+    as: 11,
+    tres: 10,
+    rey: 4,
+    caballo: 3,
+    sota: 2
+};
+
 // ==============================
-// ESTADO DEL JUEGO
+// ESTADO GLOBAL
 // ==============================
 
 let jugadores = [];
@@ -23,10 +31,15 @@ let bazaActual = [];
 
 let triunfo = null;
 let cartaTriunfo = null;
+
 let asientoQueDa = null;
+let primeraMano = true;
 
 let bazasJugadas = 0;
 let manoTerminada = false;
+
+let puntosPareja = [0, 0];
+let puntosCanticosPareja = [0, 0];
 
 // ==============================
 // DATOS DEL TUTE
@@ -77,7 +90,7 @@ function crearBaraja() {
 }
 
 // ==============================
-// REPARTO
+// REPARTIR (MANO)
 // ==============================
 
 function repartir() {
@@ -90,20 +103,30 @@ function repartir() {
         haGanadoBazaEnLaMano: false
     }));
 
+    puntosPareja = [0, 0];
+    puntosCanticosPareja = [0, 0];
+
     const baraja = crearBaraja().sort(() => Math.random() - 0.5);
 
-    if (asientoQueDa === null) {
+    // 👉 REPARTIDOR CORRECTO
+    if (primeraMano) {
         asientoQueDa = Math.floor(Math.random() * 4);
+        primeraMano = false;
+    } else {
+        asientoQueDa = (asientoQueDa + 1) % 4;
     }
 
+    // Reparto completo
     for (let i = 0; i < 10; i++) {
         jugadores.forEach(j => j.mano.push(baraja.pop()));
     }
 
-    const manoDelQueDa = jugadores[asientoQueDa].mano;
-    cartaTriunfo = manoDelQueDa[Math.floor(Math.random() * manoDelQueDa.length)];
+    // Carta de triunfo (sale de la mano del repartidor)
+    const manoRepartidor = jugadores[asientoQueDa].mano;
+    cartaTriunfo = manoRepartidor[Math.floor(Math.random() * manoRepartidor.length)];
     triunfo = cartaTriunfo.palo;
 
+    // 👉 Empieza el siguiente al repartidor
     turnoActual = (asientoQueDa + 1) % 4;
 
     bazaActual = [];
@@ -116,7 +139,7 @@ function repartir() {
 }
 
 // ==============================
-// CÁLCULO DE CÁNTICOS
+// CÁNTICOS (LÓGICA)
 // ==============================
 
 function calcularPosiblesCanticos(jugador) {
@@ -129,7 +152,6 @@ function calcularPosiblesCanticos(jugador) {
         const tieneCaballo = jugador.mano.some(
             c => c.valor === "caballo" && c.palo === palo.nombre
         );
-
         const yaCantado = jugador.canticosRealizados.some(
             c => c.palo === palo.nombre
         );
@@ -160,6 +182,23 @@ function puedeCantar(jugador) {
     );
 }
 
+function ejecutarCantico(jugador) {
+    if (!puedeCantar(jugador)) return;
+
+    const cantico =
+        jugador.posiblesCanticos.find(c => c.tipo === 40) ||
+        jugador.posiblesCanticos[0];
+
+    jugador.canticosRealizados.push(cantico);
+    jugador.haCantadoEnEstaBaza = true;
+
+    const pareja = PAREJAS_POR_ASIENTO[jugador.asiento];
+    puntosCanticosPareja[pareja] += cantico.tipo;
+
+    recalcularTodosLosCanticos();
+    render();
+}
+
 // ==============================
 // CARTAS LEGALES
 // ==============================
@@ -184,15 +223,13 @@ function cartasLegales(jugador) {
 
 function gestionarTurno() {
     if (manoTerminada) return;
-
     if (turnoActual === 0) return;
 
     setTimeout(() => {
         const jugador = jugadores[turnoActual];
         const legales = cartasLegales(jugador);
         const carta = legales[0];
-        const indice = jugador.mano.indexOf(carta);
-        jugarCarta(turnoActual, indice);
+        jugarCarta(turnoActual, jugador.mano.indexOf(carta));
     }, 600);
 }
 
@@ -207,7 +244,6 @@ function jugarCarta(asiento, indice) {
     const carta = jugador.mano.splice(indice, 1)[0];
 
     bazaActual.push({ asiento, carta });
-
     recalcularTodosLosCanticos();
 
     if (bazaActual.length === 4) {
@@ -245,6 +281,11 @@ function resolverBaza() {
 
     const parejaGanadora = PAREJAS_POR_ASIENTO[ganadora.asiento];
 
+    bazaActual.forEach(j => {
+        puntosPareja[parejaGanadora] +=
+            PUNTOS_CARTA[j.carta.valor] || 0;
+    });
+
     jugadores.forEach(j => {
         if (PAREJAS_POR_ASIENTO[j.asiento] === parejaGanadora) {
             j.haGanadoBazaEnLaMano = true;
@@ -259,12 +300,34 @@ function resolverBaza() {
     if (bazasJugadas === 10) {
         manoTerminada = true;
         render();
+        mostrarResultadoFinal();
         return;
     }
 
     recalcularTodosLosCanticos();
     render();
     gestionarTurno();
+}
+
+// ==============================
+// RESULTADO FINAL
+// ==============================
+
+function mostrarResultadoFinal() {
+    const div = document.getElementById("fin-mano");
+    div.style.display = "block";
+    div.innerHTML = `
+        <strong>Fin de la mano</strong><br><br>
+        Pareja 0 (0 y 2):<br>
+        Bazas: ${puntosPareja[0]}<br>
+        Cánticos: ${puntosCanticosPareja[0]}<br>
+        TOTAL: ${puntosPareja[0] + puntosCanticosPareja[0]}<br><br>
+
+        Pareja 1 (1 y 3):<br>
+        Bazas: ${puntosPareja[1]}<br>
+        Cánticos: ${puntosCanticosPareja[1]}<br>
+        TOTAL: ${puntosPareja[1] + puntosCanticosPareja[1]}
+    `;
 }
 
 // ==============================
@@ -276,9 +339,32 @@ function render() {
     renderRivales();
     renderBaza();
     renderTriunfo();
+    renderBotonCantico();
 
     document.getElementById("turno").textContent =
         "Turno del asiento " + turnoActual;
+}
+
+// ==============================
+// BOTÓN CÁNTICO
+// ==============================
+
+function renderBotonCantico() {
+    let btn = document.getElementById("btnCantico");
+    if (!btn) {
+        btn = document.createElement("button");
+        btn.id = "btnCantico";
+        btn.textContent = "Cantar";
+        btn.style.position = "absolute";
+        btn.style.bottom = "100px";
+        btn.style.left = "50%";
+        btn.style.transform = "translateX(-50%)";
+        document.body.appendChild(btn);
+    }
+
+    const jugador = jugadores[0];
+    btn.style.display = puedeCantar(jugador) ? "block" : "none";
+    btn.onclick = () => ejecutarCantico(jugador);
 }
 
 // ==============================
@@ -370,7 +456,7 @@ function crearDorsoDiv() {
 }
 
 // ==============================
-// BOTÓN
+// BOTÓN REPARTIR
 // ==============================
 
 document.getElementById("btnRepartir").onclick = repartir;
