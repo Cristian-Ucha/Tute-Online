@@ -314,19 +314,39 @@ function resolverBaza() {
 // ==============================
 
 function mostrarResultadoFinal() {
-    const div = document.getElementById("fin-mano");
+    let div = document.getElementById("fin-mano");
+
+    if (!div) {
+        div = document.createElement("div");
+        div.id = "fin-mano";
+        div.style.position = "absolute";
+        div.style.top = "50%";
+        div.style.left = "50%";
+        div.style.transform = "translate(-50%, -50%)";
+        div.style.background = "rgba(0,0,0,0.85)";
+        div.style.color = "white";
+        div.style.padding = "20px 30px";
+        div.style.borderRadius = "12px";
+        div.style.fontSize = "18px";
+        div.style.textAlign = "center";
+        div.style.zIndex = "9999";
+        document.body.appendChild(div);
+    }
+
     div.style.display = "block";
     div.innerHTML = `
         <strong>Fin de la mano</strong><br><br>
-        Pareja 0 (0 y 2):<br>
+
+        Pareja 0 (asientos 0 y 2)<br>
         Bazas: ${puntosPareja[0]}<br>
         Cánticos: ${puntosCanticosPareja[0]}<br>
-        TOTAL: ${puntosPareja[0] + puntosCanticosPareja[0]}<br><br>
+        <strong>Total: ${puntosPareja[0] + puntosCanticosPareja[0]}</strong>
+        <br><br>
 
-        Pareja 1 (1 y 3):<br>
+        Pareja 1 (asientos 1 y 3)<br>
         Bazas: ${puntosPareja[1]}<br>
         Cánticos: ${puntosCanticosPareja[1]}<br>
-        TOTAL: ${puntosPareja[1] + puntosCanticosPareja[1]}
+        <strong>Total: ${puntosPareja[1] + puntosCanticosPareja[1]}</strong>
     `;
 }
 
