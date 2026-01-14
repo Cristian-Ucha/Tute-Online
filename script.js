@@ -43,9 +43,9 @@ let primeraMano = true;
 let bazasJugadas = 0;
 let manoTerminada = false;
 
-// 👇 CLAVE PARA CÁNTICOS
+// cánticos
 let parejaPuedeCantar = [false, false];
-let canticosDisponiblesEstaBaza = [0, 0]; // cuántos jugadores de la pareja pueden cantar
+let canticosDisponiblesEstaBaza = [0, 0];
 
 let puntosPareja = [0, 0];
 let puntosCanticos = [0, 0];
@@ -94,7 +94,7 @@ function crearBaraja() {
 }
 
 // ==============================
-// PODER
+// PODER DE CARTA
 // ==============================
 
 function poder(c) {
@@ -200,8 +200,8 @@ function puedeCantar(j) {
     );
 }
 
-function ejecutarCantico() {
-    const j = jugadores[0];
+function ejecutarCantico(jugador) {
+    const j = jugador;
     if (!puedeCantar(j)) return;
 
     const cantico = j.posiblesCanticos[0];
@@ -210,8 +210,41 @@ function ejecutarCantico() {
     puntosCanticos[PAREJA[j.asiento]] += cantico.puntos;
     canticosDisponiblesEstaBaza[PAREJA[j.asiento]]--;
 
+    mostrarAvisoCantico(
+        `Jugador ${j.asiento} canta ${cantico.puntos} en ${cantico.palo}`
+    );
+
     recalcularCanticos();
     render();
+}
+
+// ==============================
+// AVISO CÁNTICO
+// ==============================
+
+function mostrarAvisoCantico(texto) {
+    let aviso = document.getElementById("aviso-cantico");
+
+    if (!aviso) {
+        aviso = document.createElement("div");
+        aviso.id = "aviso-cantico";
+        aviso.style.position = "absolute";
+        aviso.style.top = "20%";
+        aviso.style.left = "50%";
+        aviso.style.transform = "translateX(-50%)";
+        aviso.style.background = "rgba(0,0,0,0.85)";
+        aviso.style.color = "white";
+        aviso.style.padding = "12px 20px";
+        aviso.style.borderRadius = "10px";
+        aviso.style.fontSize = "18px";
+        aviso.style.zIndex = "100000";
+        document.body.appendChild(aviso);
+    }
+
+    aviso.textContent = texto;
+    aviso.style.display = "block";
+
+    setTimeout(() => aviso.style.display = "none", 2500);
 }
 
 // ==============================
@@ -276,9 +309,16 @@ function turnoIA() {
 
     setTimeout(() => {
         const j = jugadores[turnoActual];
+
+        // IA canta automáticamente si puede
+        if (puedeCantar(j)) {
+            ejecutarCantico(j);
+            return;
+        }
+
         const legales = cartasLegales(j);
         jugarCarta(turnoActual, j.mano.indexOf(legales[0]));
-    }, 600);
+    }, 700);
 }
 
 // ==============================
@@ -305,6 +345,14 @@ function resolverBaza() {
 
     if (bazasJugadas === 10) {
         manoTerminada = true;
+
+        // limpiar mesa
+        document.getElementById("mesa").innerHTML = "";
+        document.getElementById("baza").innerHTML = "";
+        [1, 2, 3].forEach(id => {
+            document.getElementById("rival-" + id).innerHTML = "";
+        });
+
         mostrarResultado();
         return;
     }
@@ -323,7 +371,8 @@ function render() {
     renderBaza();
     renderTriunfo();
     renderCantico();
-    document.getElementById("turno").textContent = "Turno asiento " + turnoActual;
+    document.getElementById("turno").textContent =
+        "Turno asiento " + turnoActual;
 }
 
 // ==============================
@@ -384,7 +433,7 @@ function renderCantico() {
         btn = document.createElement("button");
         btn.id = "btnCantico";
         btn.textContent = "Cantar";
-        btn.onclick = ejecutarCantico;
+        btn.onclick = () => ejecutarCantico(jugadores[0]);
         btn.style.position = "absolute";
         btn.style.bottom = "120px";
         btn.style.left = "50%";
@@ -410,8 +459,9 @@ function mostrarResultado() {
         d.style.transform = "translate(-50%, -50%)";
         d.style.background = "rgba(0,0,0,0.9)";
         d.style.color = "white";
-        d.style.padding = "20px";
-        d.style.borderRadius = "12px";
+        d.style.padding = "25px";
+        d.style.borderRadius = "14px";
+        d.style.fontSize = "20px";
         d.style.zIndex = "99999";
         document.body.appendChild(d);
     }
