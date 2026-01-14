@@ -30,6 +30,8 @@ const ORDEN_PODER = [
 // ESTADO GLOBAL
 // ==============================
 
+let estadoPartida = "jugando"; // "jugando" | "fin"
+
 let jugadores = [];
 let turnoActual = 0;
 let bazaActual = [];
@@ -41,11 +43,11 @@ let repartidor = null;
 let primeraMano = true;
 
 let bazasJugadas = 0;
-let manoTerminada = false;
 
 // cánticos
 let parejaPuedeCantar = [false, false];
-let canticosDisponiblesEstaBaza = [0, 0];
+let cantadoEstaBaza = [ [false, false], [false, false] ]; 
+// [pareja][indiceJugadorEnPareja]
 
 let puntosPareja = [0, 0];
 let puntosCanticos = [0, 0];
@@ -94,7 +96,7 @@ function crearBaraja() {
 }
 
 // ==============================
-// PODER DE CARTA
+// PODER
 // ==============================
 
 function poder(c) {
@@ -126,6 +128,8 @@ function ordenarMano(j) {
 // ==============================
 
 function repartir() {
+    estadoPartida = "jugando";
+
     jugadores = ASIENTOS.map(a => ({
         asiento: a,
         mano: [],
@@ -136,7 +140,7 @@ function repartir() {
     puntosPareja = [0, 0];
     puntosCanticos = [0, 0];
     parejaPuedeCantar = [false, false];
-    canticosDisponiblesEstaBaza = [0, 0];
+    cantadoEstaBaza = [ [false, false], [false, false] ];
 
     const baraja = crearBaraja().sort(() => Math.random() - 0.5);
 
@@ -161,7 +165,6 @@ function repartir() {
     turnoActual = (repartidor + 1) % 4;
     bazaActual = [];
     bazasJugadas = 0;
-    manoTerminada = false;
 
     recalcularCanticos();
     render();
@@ -189,26 +192,34 @@ function recalcularCanticos() {
     });
 }
 
+function indiceJugadorEnPareja(asiento) {
+    return asiento === 0 || asiento === 1 ? 0 : 1;
+}
+
 function puedeCantar(j) {
     const pareja = PAREJA[j.asiento];
+    const idx = indiceJugadorEnPareja(j.asiento);
+
     return (
+        estadoPartida === "jugando" &&
         parejaPuedeCantar[pareja] &&
-        canticosDisponiblesEstaBaza[pareja] > 0 &&
+        !cantadoEstaBaza[pareja][idx] &&
         j.posiblesCanticos.length > 0 &&
-        turnoActual === j.asiento &&
         bazaActual.length === 0
     );
 }
 
-function ejecutarCantico(jugador) {
-    const j = jugador;
+function ejecutarCantico(j) {
     if (!puedeCantar(j)) return;
 
     const cantico = j.posiblesCanticos[0];
     j.canticosRealizados.push(cantico);
 
-    puntosCanticos[PAREJA[j.asiento]] += cantico.puntos;
-    canticosDisponiblesEstaBaza[PAREJA[j.asiento]]--;
+    const pareja = PAREJA[j.asiento];
+    const idx = indiceJugadorEnPareja(j.asiento);
+
+    cantadoEstaBaza[pareja][idx] = true;
+    puntosCanticos[pareja] += cantico.puntos;
 
     mostrarAvisoCantico(
         `Jugador ${j.asiento} canta ${cantico.puntos} en ${cantico.palo}`
@@ -280,7 +291,7 @@ function cartasLegales(j) {
 // ==============================
 
 function jugarCarta(asiento, indice) {
-    if (manoTerminada) return;
+    if (estadoPartida !== "jugando") return;
 
     const j = jugadores[asiento];
     const carta = j.mano.splice(indice, 1)[0];
@@ -305,12 +316,11 @@ function jugarCarta(asiento, indice) {
 // ==============================
 
 function turnoIA() {
-    if (manoTerminada || turnoActual === 0) return;
+    if (estadoPartida !== "jugando" || turnoActual === 0) return;
 
     setTimeout(() => {
         const j = jugadores[turnoActual];
 
-        // IA canta automáticamente si puede
         if (puedeCantar(j)) {
             ejecutarCantico(j);
             return;
@@ -332,8 +342,9 @@ function resolverBaza() {
     });
 
     const pareja = PAREJA[ganadora.asiento];
+    parejaPuedeCantar = [false, false];
     parejaPuedeCantar[pareja] = true;
-    canticosDisponiblesEstaBaza[pareja] = 2;
+    cantadoEstaBaza = [ [false, false], [false, false] ];
 
     bazaActual.forEach(j => {
         puntosPareja[pareja] += PUNTOS_CARTA[j.carta.valor] || 0;
@@ -344,16 +355,8 @@ function resolverBaza() {
     bazasJugadas++;
 
     if (bazasJugadas === 10) {
-        manoTerminada = true;
-
-        // limpiar mesa
-        document.getElementById("mesa").innerHTML = "";
-        document.getElementById("baza").innerHTML = "";
-        [1, 2, 3].forEach(id => {
-            document.getElementById("rival-" + id).innerHTML = "";
-        });
-
-        mostrarResultado();
+        estadoPartida = "fin";
+        mostrarResultadoFinal();
         return;
     }
 
@@ -366,6 +369,8 @@ function resolverBaza() {
 // ==============================
 
 function render() {
+    if (estadoPartida !== "jugando") return;
+
     renderMesa();
     renderRivales();
     renderBaza();
@@ -393,7 +398,7 @@ function renderMesa() {
         d.style.opacity = legales.includes(c) ? "1" : "0.4";
         d.style.transition = "transform 0.15s";
 
-        if (legales.includes(c) && turnoActual === 0 && !manoTerminada) {
+        if (legales.includes(c) && turnoActual === 0) {
             d.onmouseenter = () => d.style.transform = "translateY(-40px)";
             d.onmouseleave = () => d.style.transform = "translateY(0)";
             d.onclick = () => jugarCarta(0, i);
@@ -448,7 +453,13 @@ function renderCantico() {
 // RESULTADO FINAL
 // ==============================
 
-function mostrarResultado() {
+function mostrarResultadoFinal() {
+    document.getElementById("mesa").innerHTML = "";
+    document.getElementById("baza").innerHTML = "";
+    [1,2,3].forEach(id => {
+        document.getElementById("rival-" + id).innerHTML = "";
+    });
+
     let d = document.getElementById("fin-mano");
     if (!d) {
         d = document.createElement("div");
@@ -461,7 +472,7 @@ function mostrarResultado() {
         d.style.color = "white";
         d.style.padding = "25px";
         d.style.borderRadius = "14px";
-        d.style.fontSize = "20px";
+        d.style.fontSize = "22px";
         d.style.zIndex = "99999";
         document.body.appendChild(d);
     }
