@@ -5,10 +5,10 @@
 const ANCHO_CARTA = 208;
 const ALTO_CARTA = 319;
 const DORSO = { fila: 4, columna: 1 };
-const TIEMPO_CANTICOS = 5000;
+const TIEMPO_CANTICOS = 3000; // 3 segundos
 
 // ===================================================
-// CONSTANTES DE JUEGO
+// CONSTANTES
 // ===================================================
 
 const ASIENTOS = [0, 1, 2, 3];
@@ -117,11 +117,11 @@ function ordenarMano(j) {
 }
 
 function indiceJugadorPareja(asiento) {
-  return asiento === 0 || asiento === 1 ? 0 : 1;
+  return asiento === 0 || asiento === 2 ? 0 : 1;
 }
 
 // ===================================================
-// REPARTO DE MANO
+// REPARTIR MANO
 // ===================================================
 
 function repartirMano() {
@@ -331,6 +331,8 @@ function finalizarMano() {
   if (total0 > total1) manosGanadas[0]++;
   else manosGanadas[1]++;
 
+  limpiarMesa();
+
   mostrarAviso(
     `Fin de mano — Pareja 0: ${total0} | Pareja 1: ${total1}`
   );
@@ -343,7 +345,19 @@ function finalizarMano() {
     return;
   }
 
-  setTimeout(repartirMano, 5000);
+  setTimeout(repartirMano, 3000);
+}
+
+// ===================================================
+// LIMPIEZA
+// ===================================================
+
+function limpiarMesa() {
+  document.getElementById("mesa").innerHTML = "";
+  document.getElementById("baza").innerHTML = "";
+  [1, 2, 3].forEach(id => {
+    document.getElementById("rival-" + id).innerHTML = "";
+  });
 }
 
 // ===================================================
@@ -423,6 +437,32 @@ function renderCantico() {
     document.body.appendChild(btn);
   }
   btn.style.display = puedeCantar(jugadores[0]) ? "block" : "none";
+}
+
+// ===================================================
+// AVISO
+// ===================================================
+
+function mostrarAviso(texto) {
+  let d = document.getElementById("aviso");
+  if (!d) {
+    d = document.createElement("div");
+    d.id = "aviso";
+    d.style.position = "absolute";
+    d.style.top = "40%";
+    d.style.left = "50%";
+    d.style.transform = "translateX(-50%)";
+    d.style.background = "rgba(0,0,0,0.85)";
+    d.style.color = "white";
+    d.style.padding = "20px";
+    d.style.fontSize = "20px";
+    d.style.borderRadius = "12px";
+    d.style.zIndex = "99999";
+    document.body.appendChild(d);
+  }
+  d.textContent = texto;
+  d.style.display = "block";
+  setTimeout(() => d.style.display = "none", 2500);
 }
 
 // ===================================================
